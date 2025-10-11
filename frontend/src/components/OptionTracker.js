@@ -27,7 +27,7 @@ const OptionTracker = () => {
 
   const fetchLivePrice = async (ticker) => {
     try {
-      const res = await axios.get(`http://localhost:5050/api/price/${ticker}`);
+      const res = await axios.get(`/api/price/${ticker}`);
       return res.data.close;
     } catch (err) {
       console.error("Price fetch error:", err.message);
