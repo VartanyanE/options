@@ -37,7 +37,6 @@ const OptionTracker = () => {
 
   const handleAdd = async () => {
     if (!form.ticker) return;
-
     const livePrice = await fetchLivePrice(form.ticker);
     const newOption = { ...form, livePrice };
     setOptions((prev) => [...prev, newOption]);
@@ -169,7 +168,6 @@ const inputStyle = {
   color: "#EAEAEA",
   fontSize: "16px",
   outline: "none",
-  transition: "border 0.2s ease, background 0.2s ease",
 };
 
 const buttonStyle = {

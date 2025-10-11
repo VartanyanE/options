@@ -1,18 +1,29 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import axios from "axios";
 
 const OptionCard = ({ option, onDelete }) => {
   const { ticker, strike, breakeven, exp, livePrice } = option;
+  const [news, setNews] = useState(null);
 
-  // Determine ITM or OTM status
+  useEffect(() => {
+    const fetchNews = async () => {
+      try {
+        const res = await axios.get(`/api/news/${ticker}`);
+        setNews(res.data);
+      } catch (err) {
+        console.error("News fetch error:", err.message);
+      }
+    };
+    fetchNews();
+  }, [ticker]);
+
+  // ITM/OTM logic
   let status = "";
   let statusColor = "#999";
-
   if (livePrice && strike) {
     const strikeNum = parseFloat(strike);
     const liveNum = parseFloat(livePrice);
-
-    // Since you’re selling puts by default, ITM means live < strike
     if (liveNum < strikeNum) {
       status = "ITM";
       statusColor = "#FF4D4D";
@@ -30,6 +41,7 @@ const OptionCard = ({ option, onDelete }) => {
       transition={{ duration: 0.4 }}
       layout
       style={{
+        position: "relative",
         background: "linear-gradient(145deg, #141414, #1c1c1c)",
         color: "#EAEAEA",
         padding: "18px",
@@ -39,6 +51,23 @@ const OptionCard = ({ option, onDelete }) => {
         border: "1px solid #1f1f1f",
       }}
     >
+      {/* ❌ Delete Icon */}
+      <button
+        onClick={onDelete}
+        style={{
+          position: "absolute",
+          top: "10px",
+          right: "12px",
+          background: "transparent",
+          border: "none",
+          color: "#FF4D4D",
+          fontSize: "18px",
+          cursor: "pointer",
+        }}
+      >
+        ×
+      </button>
+
       <div
         style={{
           display: "flex",
@@ -57,16 +86,10 @@ const OptionCard = ({ option, onDelete }) => {
         >
           {ticker}
         </h2>
-        <span
-          style={{
-            fontSize: "0.9rem",
-            color: "#aaa",
-          }}
-        >
-          Exp: {exp}
-        </span>
+        <span style={{ fontSize: "0.9rem", color: "#aaa" }}>Exp: {exp}</span>
       </div>
 
+      {/* Option Data */}
       <div style={{ display: "flex", justifyContent: "space-between" }}>
         <div>
           <p style={infoText}>Strike</p>
@@ -81,8 +104,7 @@ const OptionCard = ({ option, onDelete }) => {
           <p
             style={{
               ...infoValue,
-              color:
-                livePrice >= breakeven ? "#00FF88" : "#FF4D4D",
+              color: livePrice >= breakeven ? "#00FF88" : "#FF4D4D",
             }}
           >
             ${livePrice || "—"}
@@ -90,14 +112,8 @@ const OptionCard = ({ option, onDelete }) => {
         </div>
       </div>
 
-      {/* ITM/OTM badge */}
-      <div
-        style={{
-          marginTop: "12px",
-          display: "flex",
-          justifyContent: "center",
-        }}
-      >
+      {/* ITM/OTM Badge */}
+      <div style={{ marginTop: "12px", display: "flex", justifyContent: "center" }}>
         <span
           style={{
             background: "rgba(255,255,255,0.05)",
@@ -110,29 +126,31 @@ const OptionCard = ({ option, onDelete }) => {
             letterSpacing: "0.4px",
           }}
         >
-          {status ? status : "—"}
+          {status || "—"}
         </span>
       </div>
 
-      <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.9 }}
-        onClick={onDelete}
-        style={{
-          marginTop: "14px",
-          width: "100%",
-          background: "transparent",
-          border: "1px solid #FF4D4D",
-          color: "#FF4D4D",
-          padding: "8px",
-          borderRadius: "10px",
-          fontWeight: "500",
-          letterSpacing: "0.5px",
-          cursor: "pointer",
-        }}
-      >
-        Delete
-      </motion.button>
+      {/* 🗞️ Latest News */}
+      {news && (
+        <div style={{ marginTop: "16px", borderTop: "1px solid #222", paddingTop: "10px" }}>
+          <a
+            href={news.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: "#40C4FF",
+              textDecoration: "none",
+              fontSize: "0.95rem",
+              fontWeight: "600",
+            }}
+          >
+            🗞️ {news.title}
+          </a>
+          <p style={{ fontSize: "0.75rem", color: "#888", marginTop: "4px" }}>
+            {news.publisher} — {new Date(news.published).toLocaleDateString()}
+          </p>
+        </div>
+      )}
     </motion.div>
   );
 };
