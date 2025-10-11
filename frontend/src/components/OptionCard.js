@@ -1,24 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { motion } from "framer-motion";
-import axios from "axios";
 
 const OptionCard = ({ option, onDelete }) => {
-  const { ticker, strike, breakeven, exp, livePrice } = option;
-  const [news, setNews] = useState(null);
+  const { ticker, strike, breakeven, exp, premium, livePrice, article } = option;
 
-  useEffect(() => {
-    const fetchNews = async () => {
-      try {
-        const res = await axios.get(`/api/news/${ticker}`);
-        setNews(res.data);
-      } catch (err) {
-        console.error("News fetch error:", err.message);
-      }
-    };
-    fetchNews();
-  }, [ticker]);
-
-  // ITM/OTM logic
   let status = "";
   let statusColor = "#999";
   if (livePrice && strike) {
@@ -35,13 +20,12 @@ const OptionCard = ({ option, onDelete }) => {
 
   return (
     <motion.div
+      layout
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -30 }}
       transition={{ duration: 0.4 }}
-      layout
       style={{
-        position: "relative",
         background: "linear-gradient(145deg, #141414, #1c1c1c)",
         color: "#EAEAEA",
         padding: "18px",
@@ -49,48 +33,40 @@ const OptionCard = ({ option, onDelete }) => {
         marginBottom: "14px",
         boxShadow: "0 4px 14px rgba(0,0,0,0.4)",
         border: "1px solid #1f1f1f",
+        position: "relative",
       }}
     >
-      {/* ❌ Delete Icon */}
+      {/* Delete X */}
       <button
         onClick={onDelete}
         style={{
           position: "absolute",
           top: "10px",
-          right: "12px",
+          right: "10px",
           background: "transparent",
-          border: "none",
           color: "#FF4D4D",
-          fontSize: "18px",
+          border: "none",
+          fontSize: "1rem",
           cursor: "pointer",
         }}
       >
-        ×
+        ✖
       </button>
 
-      <div
+      <h2
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "6px",
+          color: "#00FF88",
+          fontSize: "1.2rem",
+          fontWeight: "600",
+          marginBottom: "8px",
         }}
       >
-        <h2
-          style={{
-            color: "#00FF88",
-            fontSize: "1.2rem",
-            fontWeight: "600",
-            letterSpacing: "0.5px",
-          }}
-        >
-          {ticker}
-        </h2>
-        <span style={{ fontSize: "0.9rem", color: "#aaa" }}>Exp: {exp}</span>
-      </div>
+        {ticker}
+      </h2>
 
-      {/* Option Data */}
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
+      <p style={{ fontSize: "0.9rem", color: "#aaa" }}>Exp: {exp}</p>
+
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: "10px" }}>
         <div>
           <p style={infoText}>Strike</p>
           <p style={infoValue}>${strike}</p>
@@ -113,42 +89,48 @@ const OptionCard = ({ option, onDelete }) => {
       </div>
 
       {/* ITM/OTM Badge */}
-      <div style={{ marginTop: "12px", display: "flex", justifyContent: "center" }}>
+      <div style={{ marginTop: "10px", textAlign: "center" }}>
         <span
           style={{
-            background: "rgba(255,255,255,0.05)",
             border: `1px solid ${statusColor}`,
             color: statusColor,
             borderRadius: "8px",
-            padding: "4px 10px",
+            padding: "3px 10px",
             fontSize: "0.9rem",
-            fontWeight: "500",
-            letterSpacing: "0.4px",
           }}
         >
           {status || "—"}
         </span>
       </div>
 
-      {/* 🗞️ Latest News */}
-      {news && (
-        <div style={{ marginTop: "16px", borderTop: "1px solid #222", paddingTop: "10px" }}>
+      {/* News Section */}
+      {article && (
+        <div
+          style={{
+            marginTop: "14px",
+            borderTop: "1px solid #2e2e2e",
+            paddingTop: "10px",
+          }}
+        >
+          <p style={{ color: "#999", fontSize: "0.8rem", marginBottom: "4px" }}>
+            {article.source} • {new Date(article.published).toLocaleDateString()}
+          </p>
           <a
-            href={news.url}
+            href={article.url}
             target="_blank"
             rel="noopener noreferrer"
             style={{
-              color: "#40C4FF",
+              color: "#FFC857", // warm gold tone
+              fontSize: "0.9rem",
               textDecoration: "none",
-              fontSize: "0.95rem",
-              fontWeight: "600",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
             }}
           >
-            🗞️ {news.title}
+            
+            {article.title}
           </a>
-          <p style={{ fontSize: "0.75rem", color: "#888", marginTop: "4px" }}>
-            {news.publisher} — {new Date(news.published).toLocaleDateString()}
-          </p>
         </div>
       )}
     </motion.div>
