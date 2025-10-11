@@ -21,11 +21,9 @@ app.get("/api/price/:ticker", async (req, res) => {
       `https://api.polygon.io/v2/aggs/ticker/${ticker}/prev`,
       { params: { adjusted: true, apiKey: API_KEY } }
     );
-
     const close = response.data.results?.[0]?.c || null;
     res.json({ ticker, close });
   } catch (err) {
-    console.error("Price fetch error:", err.message);
     res.status(500).json({ error: "Failed to fetch price data" });
   }
 });
@@ -54,7 +52,44 @@ app.get("/api/news/:ticker", async (req, res) => {
   }
 });
 
-// === SERVE FRONTEND IN PRODUCTION === //
+// === GLOBAL MARKET TRACKER (Polygon + CoinGecko Hybrid, Stable) === //
+app.get("/api/markets", async (req, res) => {
+  try {
+    const results = {};
+
+    // ---- STOCK ETFs (Polygon) ----
+    const stockTickers = ["SPY", "QQQ", "DIA"];
+    for (const t of stockTickers) {
+      const resp = await axios.get(
+        `https://api.polygon.io/v2/aggs/ticker/${t}/prev`,
+        { params: { adjusted: true, apiKey: API_KEY } }
+      );
+      const data = resp.data.results?.[0];
+      results[t] = data ? data.c : null;
+    }
+
+    // ---- CRYPTO (CoinGecko) ----
+    const cryptoResp = await axios.get(
+      "https://api.coingecko.com/api/v3/simple/price",
+      {
+        params: {
+          ids: "bitcoin,ethereum,ripple",
+          vs_currencies: "usd",
+        },
+      }
+    );
+    results["BTC"] = cryptoResp.data.bitcoin.usd;
+    results["ETH"] = cryptoResp.data.ethereum.usd;
+    results["XRP"] = cryptoResp.data.ripple.usd;
+
+    res.json(results);
+  } catch (err) {
+    console.error("Market tracker error:", err.message);
+    res.status(500).json({ error: "Failed to fetch market data" });
+  }
+});
+
+// === SERVE FRONTEND === //
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../frontend/build")));
   app.get("/*", (req, res) => {

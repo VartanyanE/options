@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import OptionCard from "./OptionCard";
 import { AnimatePresence, motion } from "framer-motion";
+import MarketBar from "./MarketBar";
 
 const OptionTracker = () => {
   const [options, setOptions] = useState(() => {
@@ -20,6 +21,8 @@ const OptionTracker = () => {
     exp: "",
     premium: "",
   });
+
+  const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
     localStorage.setItem("options", JSON.stringify(options));
@@ -41,6 +44,7 @@ const OptionTracker = () => {
     const newOption = { ...form, livePrice };
     setOptions((prev) => [...prev, newOption]);
     setForm({ ticker: "", strike: "", breakeven: "", exp: "", premium: "" });
+    setShowForm(false);
   };
 
   const handleDelete = (index) => {
@@ -48,114 +52,139 @@ const OptionTracker = () => {
   };
 
   return (
-    <div
-      style={{
-        padding: "20px",
-        maxWidth: "480px",
-        margin: "auto",
-        fontFamily: "Inter, sans-serif",
-      }}
-    >
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
+    <>
+      <MarketBar />
+
+      <div
         style={{
-          background: "linear-gradient(145deg, #111111, #1b1b1b)",
-          padding: "24px",
-          borderRadius: "20px",
-          marginBottom: "24px",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.5)",
-          border: "1px solid #1f1f1f",
+          padding: "20px",
+          maxWidth: "480px",
+          margin: "auto",
+          fontFamily: "Inter, sans-serif",
         }}
       >
-        <motion.h1
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.97 }}
+          onClick={() => setShowForm((prev) => !prev)}
           style={{
-            color: "#00D27A",
-            textAlign: "center",
-            marginBottom: "18px",
-            fontSize: "1.6rem",
+            width: "100%",
+            padding: "14px",
+            background: showForm
+              ? "linear-gradient(90deg, #FF4D4D, #A83232)"
+              : "linear-gradient(90deg, #00D27A, #00A85F)",
+            color: "#000",
             fontWeight: "600",
-            letterSpacing: "0.4px",
+            border: "none",
+            borderRadius: "12px",
+            marginBottom: "18px",
+            cursor: "pointer",
+            fontSize: "16px",
+            letterSpacing: "0.3px",
+            boxShadow: "0 3px 10px rgba(0,0,0,0.3)",
           }}
         >
-          Cash Flow Strategist
-        </motion.h1>
+          {showForm ? "Close" : "+ Add New Option"}
+        </motion.button>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          <input
-            style={inputStyle}
-            placeholder="Ticker (e.g. AAPL)"
-            value={form.ticker}
-            onChange={(e) =>
-              setForm({ ...form, ticker: e.target.value.toUpperCase() })
-            }
-          />
-          <input
-            style={inputStyle}
-            placeholder="Strike Price"
-            value={form.strike}
-            onChange={(e) => setForm({ ...form, strike: e.target.value })}
-          />
-          <input
-            style={inputStyle}
-            placeholder="Breakeven"
-            value={form.breakeven}
-            onChange={(e) => setForm({ ...form, breakeven: e.target.value })}
-          />
-          <input
-            style={inputStyle}
-            placeholder="Exp Date (MM/DD)"
-            value={form.exp}
-            onChange={(e) => setForm({ ...form, exp: e.target.value })}
-          />
-          <input
-            style={inputStyle}
-            placeholder="Premium Collected"
-            value={form.premium}
-            onChange={(e) => setForm({ ...form, premium: e.target.value })}
-          />
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={handleAdd}
-            style={buttonStyle}
-          >
-            + Add Option
-          </motion.button>
-        </div>
-      </motion.div>
-
-      <motion.div layout>
         <AnimatePresence>
-          {options.length === 0 && (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+          {showForm && (
+            <motion.div
+              key="form"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.4 }}
               style={{
-                color: "#777",
-                textAlign: "center",
-                fontSize: "0.95rem",
-                letterSpacing: "0.3px",
+                overflow: "hidden",
+                background: "linear-gradient(145deg, #111111, #1b1b1b)",
+                padding: "20px",
+                borderRadius: "18px",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
+                border: "1px solid #1f1f1f",
               }}
             >
-              No options saved yet.
-            </motion.p>
+              <div
+                style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+              >
+                <input
+                  style={inputStyle}
+                  placeholder="Ticker (e.g. AAPL)"
+                  value={form.ticker}
+                  onChange={(e) =>
+                    setForm({ ...form, ticker: e.target.value.toUpperCase() })
+                  }
+                />
+                <input
+                  style={inputStyle}
+                  placeholder="Strike Price"
+                  value={form.strike}
+                  onChange={(e) => setForm({ ...form, strike: e.target.value })}
+                />
+                <input
+                  style={inputStyle}
+                  placeholder="Breakeven"
+                  value={form.breakeven}
+                  onChange={(e) =>
+                    setForm({ ...form, breakeven: e.target.value })
+                  }
+                />
+                <input
+                  style={inputStyle}
+                  placeholder="Exp Date (MM/DD)"
+                  value={form.exp}
+                  onChange={(e) => setForm({ ...form, exp: e.target.value })}
+                />
+                <input
+                  style={inputStyle}
+                  placeholder="Premium Collected"
+                  value={form.premium}
+                  onChange={(e) =>
+                    setForm({ ...form, premium: e.target.value })
+                  }
+                />
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={handleAdd}
+                  style={submitButton}
+                >
+                  Save Option
+                </motion.button>
+              </div>
+            </motion.div>
           )}
-          {options.map((opt, idx) => (
-            <OptionCard
-              key={opt.ticker + idx}
-              option={opt}
-              onDelete={() => handleDelete(idx)}
-            />
-          ))}
         </AnimatePresence>
-      </motion.div>
-    </div>
+
+        <motion.div layout style={{ marginTop: "10px" }}>
+          <AnimatePresence>
+            {options.length === 0 && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                style={{
+                  color: "#777",
+                  textAlign: "center",
+                  fontSize: "0.95rem",
+                  letterSpacing: "0.3px",
+                  marginTop: "10px",
+                }}
+              >
+                No options saved yet.
+              </motion.p>
+            )}
+            {options.map((opt, idx) => (
+              <OptionCard
+                key={opt.ticker + idx}
+                option={opt}
+                onDelete={() => handleDelete(idx)}
+              />
+            ))}
+          </AnimatePresence>
+        </motion.div>
+      </div>
+    </>
   );
 };
 
@@ -168,9 +197,10 @@ const inputStyle = {
   color: "#EAEAEA",
   fontSize: "16px",
   outline: "none",
+  transition: "border 0.2s ease, background 0.2s ease",
 };
 
-const buttonStyle = {
+const submitButton = {
   width: "100%",
   padding: "14px",
   background: "linear-gradient(90deg, #00D27A, #00A85F)",
