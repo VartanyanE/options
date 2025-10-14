@@ -66,6 +66,12 @@ const OptionTracker = () => {
     setOptions((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleEdit = (index, updatedFields) => {
+    setOptions((prev) =>
+      prev.map((opt, i) => (i === index ? { ...opt, ...updatedFields } : opt))
+    );
+  };
+
   const handleRefresh = async () => {
     if (!options.length) return;
     const refreshed = await Promise.all(
@@ -253,6 +259,7 @@ const OptionTracker = () => {
             key={opt.ticker + idx}
             option={opt}
             onDelete={() => handleDelete(idx)}
+            onEdit={(updated) => handleEdit(idx, updated)}
           />
         ))}
       </AnimatePresence>
