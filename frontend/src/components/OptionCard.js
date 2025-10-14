@@ -1,8 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 
-const OptionCard = ({ option, onDelete }) => {
+const OptionCard = ({ option, onDelete, onEdit }) => {
   const { ticker, strike, breakeven, exp, premium, livePrice, article } = option;
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    strike,
+    breakeven,
+    exp,
+    premium,
+  });
 
   let status = "";
   let statusColor = "#999";
@@ -17,6 +24,11 @@ const OptionCard = ({ option, onDelete }) => {
       statusColor = "#00FF88";
     }
   }
+
+  const handleSave = () => {
+    onEdit(editForm);
+    setIsEditing(false);
+  };
 
   return (
     <motion.div
@@ -36,22 +48,33 @@ const OptionCard = ({ option, onDelete }) => {
         position: "relative",
       }}
     >
-      {/* Delete X */}
-      <button
-        onClick={onDelete}
+      {/* Action Buttons */}
+      <div
         style={{
           position: "absolute",
           top: "10px",
           right: "10px",
-          background: "transparent",
-          color: "#FF4D4D",
-          border: "none",
-          fontSize: "1rem",
-          cursor: "pointer",
+          display: "flex",
+          gap: "8px",
         }}
       >
-        ✖
-      </button>
+        {isEditing ? null : (
+          <button
+            onClick={() => setIsEditing(true)}
+            style={iconBtnStyle("#FFC857")}
+            title="Edit Option"
+          >
+            ✏️
+          </button>
+        )}
+        <button
+          onClick={onDelete}
+          style={iconBtnStyle("#FF4D4D")}
+          title="Delete Option"
+        >
+          ✖
+        </button>
+      </div>
 
       <h2
         style={{
@@ -64,78 +87,211 @@ const OptionCard = ({ option, onDelete }) => {
         {ticker}
       </h2>
 
-      <p style={{ fontSize: "0.9rem", color: "#aaa" }}>Exp: {exp}</p>
-
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: "10px" }}>
-        <div>
-          <p style={infoText}>Strike</p>
-          <p style={infoValue}>${strike}</p>
-        </div>
-        <div>
-          <p style={infoText}>Breakeven</p>
-          <p style={infoValue}>${breakeven}</p>
-        </div>
-        <div>
-          <p style={infoText}>Live</p>
-          <p
-            style={{
-              ...infoValue,
-              color: livePrice >= breakeven ? "#00FF88" : "#FF4D4D",
-            }}
-          >
-            ${livePrice || "—"}
-          </p>
-        </div>
-      </div>
-
-      {/* ITM/OTM Badge */}
-      <div style={{ marginTop: "10px", textAlign: "center" }}>
-        <span
+      {isEditing ? (
+        // === Edit Mode Form ===
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
           style={{
-            border: `1px solid ${statusColor}`,
-            color: statusColor,
-            borderRadius: "8px",
-            padding: "3px 10px",
-            fontSize: "0.9rem",
+            display: "flex",
+            flexDirection: "column",
+            gap: "10px",
+            marginTop: "10px",
           }}
         >
-          {status || "—"}
-        </span>
-      </div>
+          <label style={labelStyle}>Strike</label>
+          <input
+            style={inputStyle}
+            value={editForm.strike}
+            onChange={(e) =>
+              setEditForm({ ...editForm, strike: e.target.value })
+            }
+          />
 
-      {/* News Section */}
-      {article && (
-        <div
-          style={{
-            marginTop: "14px",
-            borderTop: "1px solid #2e2e2e",
-            paddingTop: "10px",
-          }}
-        >
-          <p style={{ color: "#999", fontSize: "0.8rem", marginBottom: "4px" }}>
-            {article.source} • {new Date(article.published).toLocaleDateString()}
-          </p>
-          <a
-            href={article.url}
-            target="_blank"
-            rel="noopener noreferrer"
+          <label style={labelStyle}>Breakeven</label>
+          <input
+            style={inputStyle}
+            value={editForm.breakeven}
+            onChange={(e) =>
+              setEditForm({ ...editForm, breakeven: e.target.value })
+            }
+          />
+
+          <label style={labelStyle}>Exp Date</label>
+          <input
+            style={inputStyle}
+            value={editForm.exp}
+            onChange={(e) =>
+              setEditForm({ ...editForm, exp: e.target.value })
+            }
+          />
+
+          <label style={labelStyle}>Premium</label>
+          <input
+            style={inputStyle}
+            value={editForm.premium}
+            onChange={(e) =>
+              setEditForm({ ...editForm, premium: e.target.value })
+            }
+          />
+
+          <div
             style={{
-              color: "#FFC857", // warm gold tone
-              fontSize: "0.9rem",
-              textDecoration: "none",
               display: "flex",
-              alignItems: "center",
-              gap: "6px",
+              justifyContent: "space-between",
+              marginTop: "10px",
             }}
           >
-            
-            {article.title}
-          </a>
-        </div>
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={handleSave}
+              style={saveBtnStyle("#00D27A")}
+            >
+              Save ✅
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => setIsEditing(false)}
+              style={saveBtnStyle("#555")}
+            >
+              Cancel
+            </motion.button>
+          </div>
+        </motion.div>
+      ) : (
+        // === Display Mode ===
+        <>
+          <p style={{ fontSize: "0.9rem", color: "#aaa" }}>Exp: {exp}</p>
+
+          {/* --- Metrics Row (Now includes Premium) --- */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(4, 1fr)",
+              textAlign: "center",
+              marginTop: "10px",
+            }}
+          >
+            <div>
+              <p style={infoText}>Strike</p>
+              <p style={infoValue}>${strike}</p>
+            </div>
+            <div>
+              <p style={infoText}>Breakeven</p>
+              <p style={infoValue}>${breakeven}</p>
+            </div>
+            <div>
+              <p style={infoText}>Premium</p>
+              <p style={{ ...infoValue, color: "#FFC857" }}>
+                ${premium || "—"}
+              </p>
+            </div>
+            <div>
+              <p style={infoText}>Live</p>
+              <p
+                style={{
+                  ...infoValue,
+                  color: livePrice >= breakeven ? "#00FF88" : "#FF4D4D",
+                }}
+              >
+                ${livePrice || "—"}
+              </p>
+            </div>
+          </div>
+
+          {/* ITM/OTM Badge */}
+          <div style={{ marginTop: "10px", textAlign: "center" }}>
+            <span
+              style={{
+                border: `1px solid ${statusColor}`,
+                color: statusColor,
+                borderRadius: "8px",
+                padding: "3px 10px",
+                fontSize: "0.9rem",
+              }}
+            >
+              {status || "—"}
+            </span>
+          </div>
+
+          {/* News Section */}
+          {article && (
+            <div
+              style={{
+                marginTop: "14px",
+                borderTop: "1px solid #2e2e2e",
+                paddingTop: "10px",
+              }}
+            >
+              <p
+                style={{
+                  color: "#999",
+                  fontSize: "0.8rem",
+                  marginBottom: "4px",
+                }}
+              >
+                {article.source} •{" "}
+                {new Date(article.published).toLocaleDateString()}
+              </p>
+              <a
+                href={article.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  color: "#FFC857",
+                  fontSize: "0.9rem",
+                  textDecoration: "none",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
+                {article.title}
+              </a>
+            </div>
+          )}
+        </>
       )}
     </motion.div>
   );
 };
+
+const iconBtnStyle = (color) => ({
+  background: "transparent",
+  color,
+  border: "none",
+  fontSize: "1rem",
+  cursor: "pointer",
+});
+
+const labelStyle = {
+  fontSize: "0.8rem",
+  color: "#aaa",
+};
+
+const inputStyle = {
+  padding: "8px 10px",
+  borderRadius: "8px",
+  border: "1px solid #2e2e2e",
+  backgroundColor: "#1a1a1a",
+  color: "#EAEAEA",
+  fontSize: "0.9rem",
+  outline: "none",
+};
+
+const saveBtnStyle = (bg) => ({
+  background: bg,
+  border: "none",
+  color: "#000",
+  fontWeight: "600",
+  borderRadius: "10px",
+  padding: "8px 12px",
+  cursor: "pointer",
+  fontSize: "0.9rem",
+});
 
 const infoText = {
   fontSize: "0.8rem",

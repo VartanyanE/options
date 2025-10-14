@@ -22,6 +22,7 @@ const OptionTracker = () => {
   });
 
   const [showForm, setShowForm] = useState(false);
+  const [showToast, setShowToast] = useState(false);
 
   useEffect(() => {
     localStorage.setItem("options", JSON.stringify(options));
@@ -65,6 +66,26 @@ const OptionTracker = () => {
     setOptions((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleRefresh = async () => {
+    if (!options.length) return;
+    const refreshed = await Promise.all(
+      options.map(async (opt) => {
+        try {
+          const livePrice = await fetchLivePrice(opt.ticker);
+          const article = await fetchNews(opt.ticker);
+          return { ...opt, livePrice, article };
+        } catch {
+          return opt;
+        }
+      })
+    );
+    setOptions(refreshed);
+
+    // ✨ Toast feedback
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 1800);
+  };
+
   return (
     <div
       style={{
@@ -74,11 +95,13 @@ const OptionTracker = () => {
         fontFamily: "Inter, sans-serif",
       }}
     >
-      {/* === BRAND IDENTITY STRIP === */}
+      {/* === BRAND IDENTITY STRIP WITH REFRESH === */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
+        whileTap={{ scale: 0.97 }}
+        onClick={handleRefresh}
         style={{
           background:
             "linear-gradient(90deg, rgba(0,210,122,0.1), rgba(0,168,95,0.15))",
@@ -90,10 +113,13 @@ const OptionTracker = () => {
           alignItems: "center",
           justifyContent: "space-between",
           boxShadow: "0 0 18px rgba(0,255,136,0.08)",
+          cursor: "pointer",
+          transition: "opacity 0.3s ease",
         }}
+        id="brandHeader"
+        title="Tap to Refresh Prices & News"
       >
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          {/* ✅ Replaced emoji with actual logo */}
           <img
             src="/icon-512.png"
             alt="Cash Flow Strategist Icon"
@@ -115,7 +141,7 @@ const OptionTracker = () => {
                 letterSpacing: "0.4px",
               }}
             >
-              Cash Flow Strategist
+              💼 Cash Flow Strategist
             </h2>
             <p
               style={{
@@ -229,6 +255,33 @@ const OptionTracker = () => {
             onDelete={() => handleDelete(idx)}
           />
         ))}
+      </AnimatePresence>
+
+      {/* === REFRESH TOAST === */}
+      <AnimatePresence>
+        {showToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            transition={{ duration: 0.3 }}
+            style={{
+              position: "fixed",
+              bottom: "20px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              background: "#00D27A",
+              color: "#000",
+              padding: "10px 18px",
+              borderRadius: "8px",
+              fontWeight: "600",
+              boxShadow: "0 2px 10px rgba(0,0,0,0.3)",
+              zIndex: 999,
+            }}
+          >
+            Prices Refreshed ✅
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   );
