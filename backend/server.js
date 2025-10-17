@@ -137,7 +137,7 @@ app.get("/api/news", async (req, res) => {
   console.log("✅ /api/news endpoint hit");
   try {
     const response = await axios.get(
-      `https://api.polygon.io/v2/reference/news?limit=10&apiKey=${process.env.POLYGON_KEY}`
+      `https://api.polygon.io/v2/reference/news?limit=10&apiKey=${process.env.POLYGON_API_KEY}`
     );
 
     const articles = response.data.results.map(a => ({
