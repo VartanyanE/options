@@ -8,7 +8,7 @@ const allowedOrigins = [
   "http://localhost:3000", // local dev
   "https://cash-flow-strategist.onrender.com" // your live frontend
 ];
-
+const app = express();
 app.use(cors({
   origin: "*",
   methods: ["GET", "POST", "OPTIONS"],
@@ -19,7 +19,7 @@ app.use(cors({
 app.options("*", cors());
 
 dotenv.config();
-const app = express();
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
