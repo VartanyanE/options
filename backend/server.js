@@ -14,8 +14,21 @@ const PORT = process.env.PORT || 5050;
 
 import cors from "cors";
 
+import cors from "cors";
+
+const allowedOrigins = [
+  "http://localhost:3000", // local dev
+  "https://cash-flow-strategist.onrender.com" // your live frontend
+];
+
 app.use(cors({
-  origin: ["http://localhost:3000",  "https://cashflow-strategist-frontend.onrender.com"],
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   methods: ["GET", "POST"],
   credentials: true
 }));
