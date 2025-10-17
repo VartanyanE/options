@@ -134,18 +134,25 @@ app.get("/api/news/:ticker", async (req, res) => {
 
 // === 🌍 GLOBAL MARKET NEWS ENDPOINT (for NewsTicker.js) === //
 app.get("/api/news", async (req, res) => {
+  console.log("✅ /api/news endpoint hit");
   try {
     const response = await axios.get(
-      `https://api.polygon.io/v2/reference/news?limit=10&apiKey=${process.env.POLYGON_API_KEY}`
+      `https://api.polygon.io/v2/reference/news?limit=10&apiKey=${process.env.POLYGON_KEY}`
     );
-    const articles = response.data.results || [];
-    const headlines = articles.map((a) => ({
+
+    const articles = response.data.results.map(a => ({
       title: a.title,
       url: a.article_url,
     }));
-    res.json(headlines);
-  } catch (err) {
-    console.error("Error fetching Polygon news:", err.message);
+
+    // ✅ Force CORS headers here
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+    res.json(articles);
+  } catch (error) {
+    console.error("Error fetching news:", error);
     res.status(500).json({ error: "Failed to fetch news" });
   }
 });
