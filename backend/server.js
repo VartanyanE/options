@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 5050;
 import cors from "cors";
 
 app.use(cors({
-  origin: ["http://localhost:3000", "https://your-render-frontend-url.onrender.com"],
+  origin: ["http://localhost:3000",  "https://cashflow-strategist-frontend.onrender.com"],
   methods: ["GET", "POST"],
   credentials: true
 }));
