@@ -7,11 +7,11 @@ const NewsTicker = () => {
 
   const fetchNews = async () => {
     try {
-      const response = await fetch(
-        `${window.location.origin.includes("localhost")
-          ? "http://localhost:5050"
-          : "https://your-render-backend-url.onrender.com"}/api/news`
-      );
+     const response = await fetch(
+  `${window.location.origin.includes("localhost")
+    ? "http://localhost:5050"
+    : "https://cashflow-strategist-api.onrender.com"}/api/news`
+);
       const data = await response.json();
       setHeadlines(data);
     } catch (error) {
