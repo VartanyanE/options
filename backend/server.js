@@ -22,16 +22,13 @@ const allowedOrigins = [
 ];
 
 app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  methods: ["GET", "POST"],
-  credentials: true
+  origin: "*",
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 }));
+
+// handle preflight requests explicitly (Render sometimes caches without this)
+app.options("*", cors());
 
 // === STOCK PRICE (FINNHUB) === //
 app.get("/api/price/:ticker", async (req, res) => {
