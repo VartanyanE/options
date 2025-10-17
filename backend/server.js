@@ -4,29 +4,43 @@ import express from "express";
 import axios from "axios";
 import dotenv from "dotenv";
 import cors from "cors";
-const allowedOrigins = [
-  "http://localhost:3000", // local dev
-  "https://cash-flow-strategist.onrender.com" // your live frontend
-];
+
+// ✅ Load environment variables first
+dotenv.config();
+
+// ✅ Setup express app
 const app = express();
+
+// ✅ Apply CORS before everything else
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://cash-flow-strategist.onrender.com",
+];
+
 app.use(cors({
-  origin: "*",
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   methods: ["GET", "POST", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
 
-
+// ✅ Handle preflight requests explicitly
 app.options("*", cors());
 
-dotenv.config();
+// ✅ Middleware for parsing JSON
+app.use(express.json());
 
-
+// ✅ Directory setup
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// ✅ Port setup
 const PORT = process.env.PORT || 5050;
-
-
 
 
 
