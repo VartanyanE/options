@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import OptionCard from "./OptionCard";
 import { AnimatePresence, motion } from "framer-motion";
+import NewsTicker from "./NewsTicker"; // 🆕 Add this import
 
 const OptionTracker = () => {
   const [options, setOptions] = useState(() => {
@@ -86,8 +87,6 @@ const OptionTracker = () => {
       })
     );
     setOptions(refreshed);
-
-    // ✨ Toast feedback
     setShowToast(true);
     setTimeout(() => setShowToast(false), 1800);
   };
@@ -101,6 +100,9 @@ const OptionTracker = () => {
         fontFamily: "Inter, sans-serif",
       }}
     >
+      {/* 🆕 News Ticker Bar */}
+      <NewsTicker />
+
       {/* === BRAND IDENTITY STRIP WITH REFRESH === */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}

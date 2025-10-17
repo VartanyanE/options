@@ -1,0 +1,43 @@
+.news-ticker {
+  background-color: #0b0f14;
+  overflow: hidden;
+  border-bottom: 1px solid #1f2937;
+  color: #ffd700;
+  font-weight: 600;
+  white-space: nowrap;
+  padding: 8px 0;
+  position: relative;
+}
+
+/* The moving lane */
+.ticker-track {
+  display: inline-block;
+  padding-left: 100%;
+  animation: scrollTicker 90s linear infinite;
+}
+
+/* Pause on hover */
+.news-ticker:hover .ticker-track {
+  animation-play-state: paused;
+}
+
+/* Individual headline styling */
+.ticker-item {
+  display: inline-block;
+  margin-right: 60px;
+  cursor: pointer;
+}
+.ticker-item:hover {
+  color: #00ff87;
+  text-decoration: underline;
+}
+
+/* Core scrolling animation */
+@keyframes scrollTicker {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}

@@ -1,0 +1,60 @@
+
+.market-bar {
+  background: linear-gradient(90deg, #0f2027, #203a43, #2c5364);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  height: 55px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  font-family: "Inter", sans-serif;
+}
+
+.ticker {
+  display: flex;
+  align-items: center;
+  gap: 2.5rem;
+  white-space: nowrap;
+  padding: 0 1.5rem;
+}
+
+.coin {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.coin-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.coin-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.coin-name {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.coin-price {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.coin-change {
+  font-size: 0.75rem;
+}
+
+.up {
+  color: #00ff9d;
+}
+
+.down {
+  color: #ff5252;
+}
