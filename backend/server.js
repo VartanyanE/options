@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 5050;
 
 import cors from "cors";
 
-import cors from "cors";
+
 
 const allowedOrigins = [
   "http://localhost:3000", // local dev
