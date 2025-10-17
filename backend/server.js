@@ -3,19 +3,7 @@ import { fileURLToPath } from "url";
 import express from "express";
 import axios from "axios";
 import dotenv from "dotenv";
-
-dotenv.config();
-const app = express();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const PORT = process.env.PORT || 5050;
-
 import cors from "cors";
-
-
-
 const allowedOrigins = [
   "http://localhost:3000", // local dev
   "https://cash-flow-strategist.onrender.com" // your live frontend
@@ -27,8 +15,22 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
 
-// handle preflight requests explicitly (Render sometimes caches without this)
+
 app.options("*", cors());
+
+dotenv.config();
+const app = express();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const PORT = process.env.PORT || 5050;
+
+
+
+
+
+
 
 // === STOCK PRICE (FINNHUB) === //
 app.get("/api/price/:ticker", async (req, res) => {
