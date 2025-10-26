@@ -4,6 +4,7 @@ import express from "express";
 import axios from "axios";
 import dotenv from "dotenv";
 import cors from "cors";
+import fetch from "node-fetch"; // ✅ Added for global-news route
 
 // ✅ Load environment variables first
 dotenv.config();
@@ -11,12 +12,10 @@ dotenv.config();
 // ✅ Setup express app
 const app = express();
 
-// ✅ Apply CORS before everything else
-import cors from "cors";
-
+// ✅ CORS configuration
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://cash-flow-strategist.onrender.com"
+  "https://cash-flow-strategist.onrender.com",
 ];
 
 app.use(
@@ -44,10 +43,6 @@ const __dirname = path.dirname(__filename);
 // ✅ Port setup
 const PORT = process.env.PORT || 5050;
 
-
-
-
-
 // === STOCK PRICE (FINNHUB) === //
 app.get("/api/price/:ticker", async (req, res) => {
   const ticker = req.params.ticker.toUpperCase();
@@ -73,43 +68,6 @@ app.get("/api/price/:ticker", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch price" });
   }
 });
-
-// === CRYPTO MARKET BAR (BTC, ETH, XRP via FreeCryptoAPI) === //
-// app.get("/api/crypto/marketbar", async (req, res) => {
-//   try {
-//     const response = await axios.get(
-//       "https://api.freecryptoapi.com/v1/cryptos/prices?ids=bitcoin,ethereum,ripple&vs_currencies=usd",
-//       {
-//         headers: { "X-API-KEY": process.env.FREE_CRYPTO_API_KEY },
-//       }
-//     );
-
-//     const results = response.data || {};
-
-//     const data = [
-//       {
-//         name: "BTC",
-//         price: results.bitcoin?.usd || 0,
-//         change: results.bitcoin?.usd_24h_change?.toFixed(2) || 0,
-//       },
-//       {
-//         name: "ETH",
-//         price: results.ethereum?.usd || 0,
-//         change: results.ethereum?.usd_24h_change?.toFixed(2) || 0,
-//       },
-//       {
-//         name: "XRP",
-//         price: results.ripple?.usd || 0,
-//         change: results.ripple?.usd_24h_change?.toFixed(2) || 0,
-//       },
-//     ];
-
-//     res.json(data);
-//   } catch (err) {
-//     console.error("Error fetching crypto data (FreeCryptoAPI):", err.message);
-//     res.status(500).json({ error: "Failed to fetch crypto data" });
-//   }
-// });
 
 // === SINGLE-TICKER NEWS (Polygon) === //
 app.get("/api/news/:ticker", async (req, res) => {
