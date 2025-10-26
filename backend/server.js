@@ -12,22 +12,24 @@ dotenv.config();
 const app = express();
 
 // ✅ Apply CORS before everything else
+import cors from "cors";
+
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://cash-flow-strategist.onrender.com",
+  "https://cash-flow-strategist.onrender.com"
 ];
 
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  methods: ["GET", "POST", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-}));
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+      if (!allowedOrigins.includes(origin)) {
+        return callback(new Error("CORS blocked"), false);
+      }
+      return callback(null, true);
+    },
+  })
+);
 
 // ✅ Handle preflight requests explicitly
 app.options("*", cors());
