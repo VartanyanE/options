@@ -73,41 +73,41 @@ app.get("/api/price/:ticker", async (req, res) => {
 });
 
 // === CRYPTO MARKET BAR (BTC, ETH, XRP via FreeCryptoAPI) === //
-app.get("/api/crypto/marketbar", async (req, res) => {
-  try {
-    const response = await axios.get(
-      "https://api.freecryptoapi.com/v1/cryptos/prices?ids=bitcoin,ethereum,ripple&vs_currencies=usd",
-      {
-        headers: { "X-API-KEY": process.env.FREE_CRYPTO_API_KEY },
-      }
-    );
+// app.get("/api/crypto/marketbar", async (req, res) => {
+//   try {
+//     const response = await axios.get(
+//       "https://api.freecryptoapi.com/v1/cryptos/prices?ids=bitcoin,ethereum,ripple&vs_currencies=usd",
+//       {
+//         headers: { "X-API-KEY": process.env.FREE_CRYPTO_API_KEY },
+//       }
+//     );
 
-    const results = response.data || {};
+//     const results = response.data || {};
 
-    const data = [
-      {
-        name: "BTC",
-        price: results.bitcoin?.usd || 0,
-        change: results.bitcoin?.usd_24h_change?.toFixed(2) || 0,
-      },
-      {
-        name: "ETH",
-        price: results.ethereum?.usd || 0,
-        change: results.ethereum?.usd_24h_change?.toFixed(2) || 0,
-      },
-      {
-        name: "XRP",
-        price: results.ripple?.usd || 0,
-        change: results.ripple?.usd_24h_change?.toFixed(2) || 0,
-      },
-    ];
+//     const data = [
+//       {
+//         name: "BTC",
+//         price: results.bitcoin?.usd || 0,
+//         change: results.bitcoin?.usd_24h_change?.toFixed(2) || 0,
+//       },
+//       {
+//         name: "ETH",
+//         price: results.ethereum?.usd || 0,
+//         change: results.ethereum?.usd_24h_change?.toFixed(2) || 0,
+//       },
+//       {
+//         name: "XRP",
+//         price: results.ripple?.usd || 0,
+//         change: results.ripple?.usd_24h_change?.toFixed(2) || 0,
+//       },
+//     ];
 
-    res.json(data);
-  } catch (err) {
-    console.error("Error fetching crypto data (FreeCryptoAPI):", err.message);
-    res.status(500).json({ error: "Failed to fetch crypto data" });
-  }
-});
+//     res.json(data);
+//   } catch (err) {
+//     console.error("Error fetching crypto data (FreeCryptoAPI):", err.message);
+//     res.status(500).json({ error: "Failed to fetch crypto data" });
+//   }
+// });
 
 // === SINGLE-TICKER NEWS (Polygon) === //
 app.get("/api/news/:ticker", async (req, res) => {
@@ -133,27 +133,15 @@ app.get("/api/news/:ticker", async (req, res) => {
 });
 
 // === 🌍 GLOBAL MARKET NEWS ENDPOINT (for NewsTicker.js) === //
-app.get("/api/news", async (req, res) => {
-  console.log("✅ /api/news endpoint hit");
+app.get("/api/global-news", async (req, res) => {
   try {
-    const response = await axios.get(
-      `https://api.polygon.io/v2/reference/news?limit=10&apiKey=${process.env.POLYGON_API_KEY}`
-    );
-
-    const articles = response.data.results.map(a => ({
-      title: a.title,
-      url: a.article_url,
-    }));
-
-    // ✅ Force CORS headers here
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-
-    res.json(articles);
+    const url = `https://api.polygon.io/v2/reference/news?limit=10&sort=published_utc&apiKey=${process.env.POLYGON_API_KEY}`;
+    const response = await fetch(url);
+    const data = await response.json();
+    res.json(data);
   } catch (error) {
-    console.error("Error fetching news:", error);
-    res.status(500).json({ error: "Failed to fetch news" });
+    console.error("Global news fetch error:", error);
+    res.status(500).json({ error: "Failed to fetch global market news" });
   }
 });
 
