@@ -10,7 +10,7 @@ const NewsTicker = () => {
       // dynamically pick backend URL
       const backendURL = window.location.origin.includes("localhost")
         ? "http://localhost:5050"
-        : "https://cash-flow-strategist-api.onrender.com";
+        : "https://cash-flow-strategist.onrender.com";
 
       // ✅ call the backend proxy instead of Polygon directly
       const response = await fetch(`${backendURL}/api/global-news`);
