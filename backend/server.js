@@ -1,47 +1,58 @@
+// -----------------------------
+// Cash Flow Strategist / Options Tracker Backend
+// -----------------------------
+
 import path from "path";
 import { fileURLToPath } from "url";
 import express from "express";
 import axios from "axios";
 import dotenv from "dotenv";
 import cors from "cors";
-import fetch from "node-fetch"; // ✅ Added for global-news route
+import fetch from "node-fetch"; // ✅ Needed for global-news route on Render
 
-// ✅ Load environment variables first
+// -----------------------------
+// Load environment variables
+// -----------------------------
 dotenv.config();
 
-// ✅ Setup express app
+// -----------------------------
+// Initialize Express
+// -----------------------------
 const app = express();
+const PORT = process.env.PORT || 5050;
 
-// ✅ CORS configuration
+// -----------------------------
+// ✅ CORS configuration (Render-safe)
+// -----------------------------
 const allowedOrigins = [
-  "http://localhost:3000",
-  "https://cash-flow-strategist.onrender.com",
+  "http://localhost:3000", // local development
+  "https://cash-flow-strategist.onrender.com", // your deployed frontend
 ];
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
-      if (!allowedOrigins.includes(origin)) {
-        return callback(new Error("CORS blocked"), false);
-      }
-      return callback(null, true);
-    },
+    origin: allowedOrigins,
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
   })
 );
 
-// ✅ Handle preflight requests explicitly
+// Explicitly handle preflight
 app.options("*", cors());
 
-// ✅ Middleware for parsing JSON
+// Parse JSON
 app.use(express.json());
 
-// ✅ Directory setup
+// -----------------------------
+// Directory setup for production
+// -----------------------------
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ✅ Port setup
-const PORT = process.env.PORT || 5050;
+// -----------------------------
+// ✅ API ROUTES
+// -----------------------------
 
 // === STOCK PRICE (FINNHUB) === //
 app.get("/api/price/:ticker", async (req, res) => {
@@ -92,7 +103,7 @@ app.get("/api/news/:ticker", async (req, res) => {
   }
 });
 
-// === 🌍 GLOBAL MARKET NEWS ENDPOINT (for NewsTicker.js) === //
+// === 🌍 GLOBAL MARKET NEWS (Polygon Proxy) === //
 app.get("/api/global-news", async (req, res) => {
   try {
     const url = `https://api.polygon.io/v2/reference/news?limit=10&sort=published_utc&apiKey=${process.env.POLYGON_API_KEY}`;
@@ -105,7 +116,14 @@ app.get("/api/global-news", async (req, res) => {
   }
 });
 
-// === FRONTEND SERVE (PROD) === //
+// === Health Check === //
+app.get("/api/test", (req, res) => {
+  res.json({ message: "✅ Backend is live and CORS headers are active." });
+});
+
+// -----------------------------
+// ✅ Serve React Frontend in Production
+// -----------------------------
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../frontend/build")));
   app.get("/*", (req, res) => {
@@ -113,4 +131,10 @@ if (process.env.NODE_ENV === "production") {
   });
 }
 
-app.listen(PORT, () => console.log(`✅ Server live on port ${PORT}`));
+// -----------------------------
+// ✅ Start Server
+// -----------------------------
+app.listen(PORT, () => {
+  console.log(`✅ Server running on port ${PORT}`);
+});
+n;
