@@ -9,7 +9,7 @@ import axios from "axios";
 import dotenv from "dotenv";
 import cors from "cors";
 import fetch from "node-fetch"; // ✅ Needed for global-news route on Render
-
+import OpenAI from "openai";
 // -----------------------------
 // Load environment variables
 // -----------------------------
@@ -55,6 +55,34 @@ const __dirname = path.dirname(__filename);
 // -----------------------------
 
 // === STOCK PRICE (FINNHUB) === //
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// === SENTIMENT ANALYSIS (AI) === //
+app.get("/api/sentiment/:ticker", async (req, res) => {
+  const { ticker } = req.params;
+  try {
+    const prompt = `
+    Analyze current public sentiment for ${ticker} stock 
+    based on recent market data and news.
+    Write 3 concise sentences in a calm, professional tone
+    suitable for an options trader.
+    Return plain text only.
+    `;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 100,
+      temperature: 0.7,
+    });
+
+    const sentiment = completion.choices[0].message.content.trim();
+    res.json({ sentiment });
+  } catch (err) {
+    console.error("Error generating sentiment:", err);
+    res.status(500).json({ error: "Failed to generate sentiment." });
+  }
+});
 app.get("/api/price/:ticker", async (req, res) => {
   const ticker = req.params.ticker.toUpperCase();
   try {
@@ -65,6 +93,8 @@ app.get("/api/price/:ticker", async (req, res) => {
     if (!data || !data.c)
       return res.status(404).json({ error: "Ticker not found" });
 
+    const percentChange = ((data.c - data.pc) / data.pc) * 100;
+
     res.json({
       ticker,
       close: data.c,
@@ -72,6 +102,7 @@ app.get("/api/price/:ticker", async (req, res) => {
       high: data.h,
       low: data.l,
       previousClose: data.pc,
+      percentChange: percentChange.toFixed(2), // ✅ new field
       timestamp: Date.now(),
     });
   } catch (err) {

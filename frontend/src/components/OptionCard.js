@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 
 const OptionCard = ({ option, onDelete, onEdit }) => {
@@ -11,6 +11,26 @@ const OptionCard = ({ option, onDelete, onEdit }) => {
     premium,
   });
 
+  // 🧩 New state for price data
+  const [priceData, setPriceData] = useState(null);
+
+  useEffect(() => {
+    const fetchPriceData = async () => {
+      try {
+        const res = await fetch(
+          `https://cash-flow-strategist-api.onrender.com/api/price/${ticker}`
+        );
+        const data = await res.json();
+        setPriceData(data);
+      } catch (error) {
+        console.error("Error fetching ticker price:", error);
+      }
+    };
+
+    fetchPriceData();
+  }, [ticker]);
+
+  // 🧮 Status logic (ITM/OTM)
   let status = "";
   let statusColor = "#999";
   if (livePrice && strike) {
@@ -30,6 +50,23 @@ const OptionCard = ({ option, onDelete, onEdit }) => {
     setIsEditing(false);
   };
 
+  // 🧮 Calculate daily change (if not precomputed)
+  const percentChange = priceData?.percentChange
+    ? parseFloat(priceData.percentChange)
+    : null;
+
+  const arrow =
+    percentChange === null
+      ? ""
+      : percentChange > 0
+      ? "📈"
+      : percentChange < 0
+      ? "📉"
+      : "";
+
+  const changeColor =
+    percentChange > 0 ? "#00FF88" : percentChange < 0 ? "#FF4D4D" : "#AAA";
+
   return (
     <motion.div
       layout
@@ -48,7 +85,7 @@ const OptionCard = ({ option, onDelete, onEdit }) => {
         position: "relative",
       }}
     >
-      {/* Action Buttons */}
+      {/* === Action Buttons === */}
       <div
         style={{
           position: "absolute",
@@ -76,19 +113,29 @@ const OptionCard = ({ option, onDelete, onEdit }) => {
         </button>
       </div>
 
+      {/* === Header: Ticker + % Change === */}
       <h2
         style={{
           color: "#00FF88",
           fontSize: "1.2rem",
           fontWeight: "600",
           marginBottom: "8px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
         }}
       >
-        {ticker}
+        <span>{ticker}</span>
+        {percentChange !== null && (
+          <span style={{ color: changeColor, fontSize: "0.9rem" }}>
+            {arrow} {percentChange > 0 ? "+" : ""}
+            {percentChange}%
+          </span>
+        )}
       </h2>
 
       {isEditing ? (
-        // === Edit Mode Form ===
+        // === Edit Mode ===
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -166,7 +213,7 @@ const OptionCard = ({ option, onDelete, onEdit }) => {
         <>
           <p style={{ fontSize: "0.9rem", color: "#aaa" }}>Exp: {exp}</p>
 
-          {/* --- Metrics Row (Now includes Premium) --- */}
+          {/* --- Metrics Row --- */}
           <div
             style={{
               display: "grid",
@@ -202,7 +249,7 @@ const OptionCard = ({ option, onDelete, onEdit }) => {
             </div>
           </div>
 
-          {/* ITM/OTM Badge */}
+          {/* === ITM/OTM Badge === */}
           <div style={{ marginTop: "10px", textAlign: "center" }}>
             <span
               style={{
@@ -217,7 +264,7 @@ const OptionCard = ({ option, onDelete, onEdit }) => {
             </span>
           </div>
 
-          {/* News Section */}
+          {/* === News Section === */}
           {article && (
             <div
               style={{
