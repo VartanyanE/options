@@ -58,59 +58,57 @@ const __dirname = path.dirname(__filename);
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // === SENTIMENT ANALYSIS (AI) === //
+
 app.get("/api/sentiment/:ticker", async (req, res) => {
   const { ticker } = req.params;
   try {
-    const prompt = `
-    Analyze current public sentiment for ${ticker} stock 
-    based on recent market data and news.
-    Write 3 concise sentences in a calm, professional tone
-    suitable for an options trader.
-    Return plain text only.
-    `;
+    const prompt = `Give a 3-sentence, concise sentiment summary for the stock ${ticker}.
+    Indicate whether sentiment is bullish, bearish, or neutral based on recent market performance and investor tone. 
+    Keep it objective and factual.`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [{ role: "user", content: prompt }],
-      max_tokens: 100,
-      temperature: 0.7,
     });
 
     const sentiment = completion.choices[0].message.content.trim();
-    res.json({ sentiment });
+    res.json({ ticker, sentiment });
   } catch (err) {
-    console.error("Error generating sentiment:", err);
-    res.status(500).json({ error: "Failed to generate sentiment." });
+    console.error("Sentiment API error:", err.message);
+    res.status(500).json({ error: "Failed to fetch sentiment" });
   }
 });
 app.get("/api/price/:ticker", async (req, res) => {
   const ticker = req.params.ticker.toUpperCase();
+
   try {
-    const response = await axios.get(
+    const { data } = await axios.get(
       `https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${process.env.FINNHUB_API_KEY}`
     );
-    const data = response.data;
-    if (!data || !data.c)
-      return res.status(404).json({ error: "Ticker not found" });
 
-    const percentChange = ((data.c - data.pc) / data.pc) * 100;
+    // fallback check
+    const close = data.c ?? 0;
+    const prev = data.pc ?? 0;
+
+    let percentChange = null;
+    if (close && prev && prev !== 0) {
+      percentChange = ((close - prev) / prev) * 100;
+    }
 
     res.json({
       ticker,
-      close: data.c,
+      close,
       open: data.o,
       high: data.h,
       low: data.l,
-      previousClose: data.pc,
-      percentChange: percentChange.toFixed(2), // ✅ new field
-      timestamp: Date.now(),
+      previousClose: prev,
+      percentChange: percentChange !== null ? percentChange.toFixed(2) : "0.00",
     });
   } catch (err) {
     console.error("Error fetching price (Finnhub):", err.message);
     res.status(500).json({ error: "Failed to fetch price" });
   }
 });
-
 // === SINGLE-TICKER NEWS (Polygon) === //
 app.get("/api/news/:ticker", async (req, res) => {
   const ticker = req.params.ticker.toUpperCase();

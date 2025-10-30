@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import OptionCard from "./OptionCard";
 import { AnimatePresence, motion } from "framer-motion";
-import NewsTicker from "./NewsTicker"; // 🆕 Add this import
+import NewsTicker from "./NewsTicker";
 
 const OptionTracker = () => {
   const [options, setOptions] = useState(() => {
@@ -29,63 +29,100 @@ const OptionTracker = () => {
     localStorage.setItem("options", JSON.stringify(options));
   }, [options]);
 
+  // === FETCH LIVE PRICE + PERCENT CHANGE ===
   const fetchLivePrice = async (ticker) => {
     try {
-      const res = await axios.get(`/api/price/${ticker}`);
-      return res.data.close;
+      const res = await axios.get(`http://localhost:5050/api/price/${ticker}`);
+      return {
+        close: res.data.close,
+        percentChange: res.data.percentChange,
+      };
     } catch (err) {
       console.error("Price fetch error:", err.message);
-      return null;
+      return { close: null, percentChange: null };
     }
   };
 
-  const fetchNews = async (ticker) => {
+  // === FETCH SENTIMENT ===
+  const fetchSentiment = async (ticker) => {
     try {
-      const res = await axios.get(`/api/news/${ticker}`);
-      return res.data.article;
+      const res = await axios.get(
+        `http://localhost:5050/api/sentiment/${ticker}`
+      );
+      return res.data.sentiment;
     } catch (err) {
-      console.error("News fetch error:", err.message);
-      return null;
+      console.error("Sentiment fetch error:", err.message);
+      return "Sentiment unavailable.";
     }
   };
 
+  // === ADD NEW OPTION ===
   const handleAdd = async () => {
     if (!form.ticker) return;
 
-    const [livePrice, article] = await Promise.all([
-      fetchLivePrice(form.ticker),
-      fetchNews(form.ticker),
-    ]);
+    try {
+      const [{ close, percentChange }, sentiment] = await Promise.all([
+        fetchLivePrice(form.ticker),
+        fetchSentiment(form.ticker), // ✅ added sentiment at creation
+      ]);
 
-    const newOption = { ...form, livePrice, article };
-    setOptions((prev) => [...prev, newOption]);
-    setForm({ ticker: "", strike: "", breakeven: "", exp: "", premium: "" });
-    setShowForm(false);
+      const newOption = {
+        ...form,
+        livePrice: close,
+        percentChange,
+        sentiment, // ✅ now included
+      };
+
+      setOptions((prev) => [...prev, newOption]);
+      setForm({ ticker: "", strike: "", breakeven: "", exp: "", premium: "" });
+      setShowForm(false);
+    } catch (err) {
+      console.error("Error adding option:", err.message);
+    }
   };
 
+  // === DELETE OPTION ===
   const handleDelete = (index) => {
     setOptions((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // === EDIT OPTION ===
   const handleEdit = (index, updatedFields) => {
     setOptions((prev) =>
       prev.map((opt, i) => (i === index ? { ...opt, ...updatedFields } : opt))
     );
   };
 
+  // === REFRESH ALL OPTION DATA ===
   const handleRefresh = async () => {
     if (!options.length) return;
+
     const refreshed = await Promise.all(
       options.map(async (opt) => {
         try {
-          const livePrice = await fetchLivePrice(opt.ticker);
-          const article = await fetchNews(opt.ticker);
-          return { ...opt, livePrice, article };
-        } catch {
+          const priceRes = await axios.get(
+            `http://localhost:5050/api/price/${opt.ticker}`
+          );
+          const { close, percentChange } = priceRes.data;
+
+          const sentimentRes = await axios.get(
+            `http://localhost:5050/api/sentiment/${opt.ticker}`
+          );
+          const sentiment = sentimentRes.data.sentiment;
+
+          return {
+            ...opt,
+            livePrice: close,
+            percentChange,
+            sentiment,
+          };
+        } catch (err) {
+          console.error(`Error refreshing ${opt.ticker}:`, err.message);
           return opt;
         }
       })
     );
+
     setOptions(refreshed);
     setShowToast(true);
     setTimeout(() => setShowToast(false), 1800);
@@ -100,10 +137,10 @@ const OptionTracker = () => {
         fontFamily: "Inter, sans-serif",
       }}
     >
-      {/* 🆕 News Ticker Bar */}
+      {/* === GLOBAL NEWS TICKER === */}
       <NewsTicker />
 
-      {/* === BRAND IDENTITY STRIP WITH REFRESH === */}
+      {/* === BRAND HEADER === */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -122,10 +159,9 @@ const OptionTracker = () => {
           justifyContent: "space-between",
           boxShadow: "0 0 18px rgba(0,255,136,0.08)",
           cursor: "pointer",
-          transition: "opacity 0.3s ease",
         }}
         id="brandHeader"
-        title="Tap to Refresh Prices & News"
+        title="Tap to Refresh Prices & Sentiment"
       >
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <img
@@ -165,7 +201,7 @@ const OptionTracker = () => {
         </div>
       </motion.div>
 
-      {/* === COLLAPSIBLE ADD OPTION === */}
+      {/* === ADD NEW OPTION COLLAPSIBLE FORM === */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -254,7 +290,7 @@ const OptionTracker = () => {
         )}
       </motion.div>
 
-      {/* === OPTION CARDS === */}
+      {/* === OPTIONS LIST === */}
       <AnimatePresence>
         {options.map((opt, idx) => (
           <OptionCard
@@ -288,7 +324,7 @@ const OptionTracker = () => {
               zIndex: 999,
             }}
           >
-            Prices Refreshed ✅
+            Prices & Sentiment Updated ✅
           </motion.div>
         )}
       </AnimatePresence>

@@ -2,7 +2,17 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 
 const OptionCard = ({ option, onDelete, onEdit }) => {
-  const { ticker, strike, breakeven, exp, premium, livePrice, article } = option;
+  const {
+    ticker,
+    strike,
+    breakeven,
+    exp,
+    premium,
+    livePrice,
+    percentChange,
+    sentiment, // ✅ now included
+  } = option;
+
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
     strike,
@@ -11,26 +21,7 @@ const OptionCard = ({ option, onDelete, onEdit }) => {
     premium,
   });
 
-  // 🧩 New state for price data
-  const [priceData, setPriceData] = useState(null);
-
-  useEffect(() => {
-    const fetchPriceData = async () => {
-      try {
-        const res = await fetch(
-          `https://cash-flow-strategist-api.onrender.com/api/price/${ticker}`
-        );
-        const data = await res.json();
-        setPriceData(data);
-      } catch (error) {
-        console.error("Error fetching ticker price:", error);
-      }
-    };
-
-    fetchPriceData();
-  }, [ticker]);
-
-  // 🧮 Status logic (ITM/OTM)
+  // === ITM / OTM Logic ===
   let status = "";
   let statusColor = "#999";
   if (livePrice && strike) {
@@ -50,13 +41,8 @@ const OptionCard = ({ option, onDelete, onEdit }) => {
     setIsEditing(false);
   };
 
-  // 🧮 Calculate daily change (if not precomputed)
-  const percentChange = priceData?.percentChange
-    ? parseFloat(priceData.percentChange)
-    : null;
-
   const arrow =
-    percentChange === null
+    percentChange === null || percentChange === undefined
       ? ""
       : percentChange > 0
       ? "📈"
@@ -95,7 +81,7 @@ const OptionCard = ({ option, onDelete, onEdit }) => {
           gap: "8px",
         }}
       >
-        {isEditing ? null : (
+        {!isEditing && (
           <button
             onClick={() => setIsEditing(true)}
             style={iconBtnStyle("#FFC857")}
@@ -126,10 +112,10 @@ const OptionCard = ({ option, onDelete, onEdit }) => {
         }}
       >
         <span>{ticker}</span>
-        {percentChange !== null && (
+        {percentChange !== null && percentChange !== undefined && (
           <span style={{ color: changeColor, fontSize: "0.9rem" }}>
             {arrow} {percentChange > 0 ? "+" : ""}
-            {percentChange}%
+            {parseFloat(percentChange).toFixed(2)}%
           </span>
         )}
       </h2>
@@ -169,9 +155,7 @@ const OptionCard = ({ option, onDelete, onEdit }) => {
           <input
             style={inputStyle}
             value={editForm.exp}
-            onChange={(e) =>
-              setEditForm({ ...editForm, exp: e.target.value })
-            }
+            onChange={(e) => setEditForm({ ...editForm, exp: e.target.value })}
           />
 
           <label style={labelStyle}>Premium</label>
@@ -264,48 +248,79 @@ const OptionCard = ({ option, onDelete, onEdit }) => {
             </span>
           </div>
 
-          {/* === News Section === */}
-          {article && (
-            <div
-              style={{
-                marginTop: "14px",
-                borderTop: "1px solid #2e2e2e",
-                paddingTop: "10px",
-              }}
-            >
-              <p
-                style={{
-                  color: "#999",
-                  fontSize: "0.8rem",
-                  marginBottom: "4px",
-                }}
-              >
-                {article.source} •{" "}
-                {new Date(article.published).toLocaleDateString()}
-              </p>
-              <a
-                href={article.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  color: "#FFC857",
-                  fontSize: "0.9rem",
-                  textDecoration: "none",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                }}
-              >
-                {article.title}
-              </a>
-            </div>
-          )}
+          {/* === Sentiment Section (replaces news) === */}
+          <div
+            style={{
+              marginTop: "14px",
+              borderTop: "1px solid #2e2e2e",
+              paddingTop: "10px",
+              fontFamily: "monospace",
+              fontSize: "0.9rem",
+              color: "#ccc",
+              minHeight: "60px",
+              whiteSpace: "pre-wrap",
+            }}
+          >
+            {sentiment ? (
+              <TypewriterText text={sentiment} />
+            ) : (
+              "No sentiment data available."
+            )}
+          </div>
         </>
       )}
     </motion.div>
   );
 };
 
+// === Typewriter animation component ===
+const TypewriterText = ({ text }) => {
+  const [displayed, setDisplayed] = useState("");
+  const [showCursor, setShowCursor] = useState(true);
+
+  useEffect(() => {
+    if (!text) return;
+
+    let i = 0;
+    setDisplayed(""); // reset for re-renders
+    setShowCursor(true);
+
+    const interval = setInterval(() => {
+      if (i < text.length) {
+        setDisplayed((prev) => prev + text[i]);
+        i++;
+      } else {
+        clearInterval(interval);
+        // Pause cursor for a second before resuming blink
+        setTimeout(() => setShowCursor(true), 800);
+      }
+    }, 30);
+
+    return () => clearInterval(interval);
+  }, [text]);
+
+  return (
+    <>
+      {displayed}
+      {showCursor && <span className="blinking-cursor">▍</span>}
+    </>
+  );
+};
+
+// blinking cursor style
+const style = document.createElement("style");
+style.textContent = `
+  .blinking-cursor {
+    animation: blink 1s step-end infinite;
+  }
+  @keyframes blink {
+    from, to { opacity: 0; }
+    50% { opacity: 1; }
+  }
+`;
+document.head.appendChild(style);
+
+// === Styles ===
 const iconBtnStyle = (color) => ({
   background: "transparent",
   color,
