@@ -135,10 +135,34 @@ app.get("/api/news/:ticker", async (req, res) => {
 // === 🌍 GLOBAL MARKET NEWS (Polygon Proxy) === //
 app.get("/api/global-news", async (req, res) => {
   try {
-    const url = `https://api.polygon.io/v2/reference/news?limit=10&sort=published_utc&apiKey=${process.env.POLYGON_API_KEY}`;
+   const today = new Date();
+today.setDate(today.getDate() - 2);
+const from = today.toISOString();
+const url = `https://api.polygon.io/v2/reference/news?published_utc.gte=${from}&limit=15&sort=published_utc&order=desc&apiKey=${process.env.POLYGON_API_KEY}`;
     const response = await fetch(url);
     const data = await response.json();
-    res.json(data);
+
+    if (!data.results) {
+      return res.json({ results: [] });
+    }
+
+    // ✅ Basic language filter (keep only articles with mostly English letters)
+    const englishOnly = data.results.filter((a) => {
+      const text = `${a.title} ${a.description || ""}`;
+      const englishRatio =
+        (text.match(/[a-zA-Z]/g)?.length || 0) / text.length;
+      return englishRatio > 0.7; // at least 70% English characters
+    });
+
+    // ✅ Clean format for frontend
+    const formatted = englishOnly.map((a) => ({
+      title: a.title,
+      url: a.article_url,
+      source: a.publisher?.name || "Polygon",
+      published: a.published_utc,
+    }));
+
+    res.json({ results: formatted });
   } catch (error) {
     console.error("Global news fetch error:", error);
     res.status(500).json({ error: "Failed to fetch global market news" });

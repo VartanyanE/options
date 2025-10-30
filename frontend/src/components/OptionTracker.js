@@ -3,6 +3,7 @@ import axios from "axios";
 import OptionCard from "./OptionCard";
 import { AnimatePresence, motion } from "framer-motion";
 import NewsTicker from "./NewsTicker";
+import API_BASE_URL from "../config";
 
 const OptionTracker = () => {
   const [options, setOptions] = useState(() => {
@@ -32,7 +33,7 @@ const OptionTracker = () => {
   // === FETCH LIVE PRICE + PERCENT CHANGE ===
   const fetchLivePrice = async (ticker) => {
     try {
-      const res = await axios.get(`http://localhost:5050/api/price/${ticker}`);
+      const res = await axios.get(`${API_BASE_URL}/api/price/${ticker}`);
       return {
         close: res.data.close,
         percentChange: res.data.percentChange,
@@ -46,9 +47,7 @@ const OptionTracker = () => {
   // === FETCH SENTIMENT ===
   const fetchSentiment = async (ticker) => {
     try {
-      const res = await axios.get(
-        `http://localhost:5050/api/sentiment/${ticker}`
-      );
+      const res = await axios.get(`${API_BASE_URL}/api/price/${ticker}`);
       return res.data.sentiment;
     } catch (err) {
       console.error("Sentiment fetch error:", err.message);
