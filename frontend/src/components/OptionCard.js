@@ -38,20 +38,25 @@ const OptionCard = ({ option, onDelete, onEdit }) => {
 };
 
   // --- Typing animation effect ---
-  const typeText = (text) => {
-    setIsTyping(true);
-    let i = 0;
-    setAiInsight("");
-    const interval = setInterval(() => {
-      setAiInsight((prev) => prev + text.charAt(i));
-      i++;
-      if (i >= text.length) {
-        clearInterval(interval);
-        setIsTyping(false);
-      }
-    }, 25);
-  };
+ const typeText = (text) => {
+  setIsTyping(true);
+  setAiInsight(""); // clear text first
 
+  // Use local mutable copy to avoid stale closure from React
+  let currentText = "";
+  let index = 0;
+
+  const interval = setInterval(() => {
+    currentText += text[index]; // append next character
+    setAiInsight(currentText);  // ✅ always set full string (not prev + new char)
+    index += 1;
+
+    if (index >= text.length) {
+      clearInterval(interval);
+      setIsTyping(false);
+    }
+  }, 25);
+};
   // --- ITM / OTM Logic ---
   let status = "";
   let statusColor = "#999";
