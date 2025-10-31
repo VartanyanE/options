@@ -59,23 +59,22 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // === SENTIMENT ANALYSIS (AI) === //
 
-app.get("/api/sentiment/:ticker", async (req, res) => {
+app.get("/api/analyze/:ticker", async (req, res) => {
   const { ticker } = req.params;
   try {
-    const prompt = `Give a 3-sentence, concise sentiment summary for the stock ${ticker}.
-    Indicate whether sentiment is bullish, bearish, or neutral based on recent market performance and investor tone. 
-    Keep it objective and factual.`;
+    const prompt = `Given the ticker ${ticker}, describe the short-term option sentiment. Is this stock showing higher implied volatility and premium attraction for put sellers? Respond with a short 2-sentence insight suitable for a CSP trader.`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [{ role: "user", content: prompt }],
+      max_tokens: 80,
     });
 
-    const sentiment = completion.choices[0].message.content.trim();
-    res.json({ ticker, sentiment });
+    const insight = completion.choices[0].message.content.trim();
+    res.json({ insight });
   } catch (err) {
-    console.error("Sentiment API error:", err.message);
-    res.status(500).json({ error: "Failed to fetch sentiment" });
+    console.error(err);
+    res.status(500).json({ insight: "Error fetching AI insight." });
   }
 });
 app.get("/api/price/:ticker", async (req, res) => {

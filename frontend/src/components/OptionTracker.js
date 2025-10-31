@@ -44,32 +44,17 @@ const OptionTracker = () => {
     }
   };
 
-  // === FETCH SENTIMENT ===
-  const fetchSentiment = async (ticker) => {
-    try {
-      const res = await axios.get(`${API_BASE_URL}/api/price/${ticker}`);
-      return res.data.sentiment;
-    } catch (err) {
-      console.error("Sentiment fetch error:", err.message);
-      return "Sentiment unavailable.";
-    }
-  };
-
   // === ADD NEW OPTION ===
   const handleAdd = async () => {
     if (!form.ticker) return;
 
     try {
-      const [{ close, percentChange }, sentiment] = await Promise.all([
-        fetchLivePrice(form.ticker),
-        fetchSentiment(form.ticker), // ✅ added sentiment at creation
-      ]);
+      const { close, percentChange } = await fetchLivePrice(form.ticker);
 
       const newOption = {
         ...form,
         livePrice: close,
         percentChange,
-        sentiment, // ✅ now included
       };
 
       setOptions((prev) => [...prev, newOption]);
@@ -99,21 +84,13 @@ const OptionTracker = () => {
     const refreshed = await Promise.all(
       options.map(async (opt) => {
         try {
-          const priceRes = await axios.get(
-            `http://localhost:5050/api/price/${opt.ticker}`
-          );
-          const { close, percentChange } = priceRes.data;
-
-          const sentimentRes = await axios.get(
-            `http://localhost:5050/api/sentiment/${opt.ticker}`
-          );
-          const sentiment = sentimentRes.data.sentiment;
+          const res = await axios.get(`${API_BASE_URL}/api/price/${opt.ticker}`);
+          const { close, percentChange } = res.data;
 
           return {
             ...opt,
             livePrice: close,
             percentChange,
-            sentiment,
           };
         } catch (err) {
           console.error(`Error refreshing ${opt.ticker}:`, err.message);
@@ -160,7 +137,7 @@ const OptionTracker = () => {
           cursor: "pointer",
         }}
         id="brandHeader"
-        title="Tap to Refresh Prices & Sentiment"
+        title="Tap to Refresh Prices"
       >
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <img
@@ -323,7 +300,7 @@ const OptionTracker = () => {
               zIndex: 999,
             }}
           >
-            Prices & Sentiment Updated ✅
+            Prices Updated ✅
           </motion.div>
         )}
       </AnimatePresence>

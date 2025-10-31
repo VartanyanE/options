@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
+import API_BASE_URL from "../config"; 
 
 const OptionCard = ({ option, onDelete, onEdit }) => {
   const {
@@ -10,18 +11,48 @@ const OptionCard = ({ option, onDelete, onEdit }) => {
     premium,
     livePrice,
     percentChange,
-    sentiment, // ✅ now included
   } = option;
 
   const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState({
-    strike,
-    breakeven,
-    exp,
-    premium,
-  });
+  const [editForm, setEditForm] = useState({ strike, breakeven, exp, premium });
 
-  // === ITM / OTM Logic ===
+  const [aiInsight, setAiInsight] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // --- Fetch AI Insight from backend route ---
+ const fetchAIInsight = async () => {
+  try {
+    setLoading(true);
+    setAiInsight("");
+    const res = await fetch(`${API_BASE_URL}/api/analyze/${ticker}`); // ✅ dynamic base URL
+    const data = await res.json();
+    const text = data.insight || "No insight available.";
+    setLoading(false);
+    typeText(text);
+  } catch (err) {
+    console.error("AI Insight error:", err);
+    setLoading(false);
+    setAiInsight("⚠️ Unable to fetch AI insight right now.");
+  }
+};
+
+  // --- Typing animation effect ---
+  const typeText = (text) => {
+    setIsTyping(true);
+    let i = 0;
+    setAiInsight("");
+    const interval = setInterval(() => {
+      setAiInsight((prev) => prev + text.charAt(i));
+      i++;
+      if (i >= text.length) {
+        clearInterval(interval);
+        setIsTyping(false);
+      }
+    }, 25);
+  };
+
+  // --- ITM / OTM Logic ---
   let status = "";
   let statusColor = "#999";
   if (livePrice && strike) {
@@ -193,7 +224,6 @@ const OptionCard = ({ option, onDelete, onEdit }) => {
           </div>
         </motion.div>
       ) : (
-        // === Display Mode ===
         <>
           <p style={{ fontSize: "0.9rem", color: "#aaa" }}>Exp: {exp}</p>
 
@@ -248,77 +278,50 @@ const OptionCard = ({ option, onDelete, onEdit }) => {
             </span>
           </div>
 
-          {/* === Sentiment Section (replaces news) === */}
+          {/* === AI Insight Button + Scrolling Text === */}
           <div
             style={{
               marginTop: "14px",
               borderTop: "1px solid #2e2e2e",
               paddingTop: "10px",
-              fontFamily: "monospace",
-              fontSize: "0.9rem",
-              color: "#ccc",
-              minHeight: "60px",
-              whiteSpace: "pre-wrap",
+              minHeight: "70px",
             }}
           >
-            {sentiment ? (
-              <TypewriterText text={sentiment} />
-            ) : (
-              "No sentiment data available."
-            )}
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={fetchAIInsight}
+              style={{
+                background: "linear-gradient(90deg, #00D27A, #00A85F)",
+                border: "none",
+                color: "#000",
+                borderRadius: "8px",
+                padding: "6px 10px",
+                fontSize: "0.85rem",
+                fontWeight: "600",
+                cursor: "pointer",
+                marginBottom: "10px",
+              }}
+            >
+              {loading ? "Thinking..." : "AI Insight ⚡"}
+            </motion.button>
+
+            <p
+              style={{
+                color: "#aaa",
+                fontSize: "0.9rem",
+                lineHeight: "1.4em",
+                whiteSpace: "pre-wrap",
+              }}
+            >
+              {aiInsight}
+            </p>
           </div>
         </>
       )}
     </motion.div>
   );
 };
-
-// === Typewriter animation component ===
-const TypewriterText = ({ text }) => {
-  const [displayed, setDisplayed] = useState("");
-  const [showCursor, setShowCursor] = useState(true);
-
-  useEffect(() => {
-    if (!text) return;
-
-    let i = 0;
-    setDisplayed(""); // reset for re-renders
-    setShowCursor(true);
-
-    const interval = setInterval(() => {
-      if (i < text.length) {
-        setDisplayed((prev) => prev + text[i]);
-        i++;
-      } else {
-        clearInterval(interval);
-        // Pause cursor for a second before resuming blink
-        setTimeout(() => setShowCursor(true), 800);
-      }
-    }, 30);
-
-    return () => clearInterval(interval);
-  }, [text]);
-
-  return (
-    <>
-      {displayed}
-      {showCursor && <span className="blinking-cursor">▍</span>}
-    </>
-  );
-};
-
-// blinking cursor style
-const style = document.createElement("style");
-style.textContent = `
-  .blinking-cursor {
-    animation: blink 1s step-end infinite;
-  }
-  @keyframes blink {
-    from, to { opacity: 0; }
-    50% { opacity: 1; }
-  }
-`;
-document.head.appendChild(style);
 
 // === Styles ===
 const iconBtnStyle = (color) => ({
@@ -329,10 +332,7 @@ const iconBtnStyle = (color) => ({
   cursor: "pointer",
 });
 
-const labelStyle = {
-  fontSize: "0.8rem",
-  color: "#aaa",
-};
+const labelStyle = { fontSize: "0.8rem", color: "#aaa" };
 
 const inputStyle = {
   padding: "8px 10px",
