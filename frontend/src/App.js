@@ -1,12 +1,19 @@
 import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import OptionTracker from "./components/OptionTracker";
+import StockAnalyzer from "./components/StockAnalyzer"; // NEW
 import "./index.css";
 
 function App() {
   return (
-    <div className="app-container">
-      <OptionTracker />
-    </div>
+    <Router>
+      <div className="app-container">
+        <Routes>
+          <Route path="/" element={<OptionTracker />} />
+          <Route path="/analyzer" element={<StockAnalyzer />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 
