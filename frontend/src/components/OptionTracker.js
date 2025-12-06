@@ -3,7 +3,6 @@ import axios from "axios";
 import OptionCard from "./OptionCard";
 import StockPrice from "./StockPrice";
 import NewsTicker from "./NewsTicker";
-import MarketBar from "./MarketBar";
 import API_BASE_URL from "../config";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -15,30 +14,23 @@ const OptionTracker = () => {
   const [ticker, setTicker] = useState("");
   const [strike, setStrike] = useState("");
   const [breakeven, setBreakeven] = useState("");
+  const [contracts, setContracts] = useState(""); // NEW FIELD
   const [exp, setExp] = useState("");
   const [premium, setPremium] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ----------------------------------------
   // Load saved options from localStorage
-  // ----------------------------------------
   useEffect(() => {
     const saved = localStorage.getItem("options");
-    if (saved) {
-      setOptions(JSON.parse(saved));
-    }
+    if (saved) setOptions(JSON.parse(saved));
   }, []);
 
-  // ----------------------------------------
   // Save options to localStorage
-  // ----------------------------------------
   useEffect(() => {
     localStorage.setItem("options", JSON.stringify(options));
   }, [options]);
 
-  // ----------------------------------------
-  // Add new option card
-  // ----------------------------------------
+  // Add new option
   const handleAddOption = (e) => {
     e.preventDefault();
     if (!ticker || !strike || !breakeven || !exp) return;
@@ -48,6 +40,7 @@ const OptionTracker = () => {
       ticker: ticker.toUpperCase(),
       strike,
       breakeven,
+      contracts: contracts || "1", // DEFAULT 1
       exp,
       premium: premium || "",
       livePrice: null,
@@ -59,20 +52,17 @@ const OptionTracker = () => {
     setTicker("");
     setStrike("");
     setBreakeven("");
+    setContracts("");   // RESET
     setExp("");
     setPremium("");
   };
 
-  // ----------------------------------------
-  // Delete option
-  // ----------------------------------------
+  // Delete an option
   const handleDelete = (id) => {
     setOptions(options.filter((opt) => opt.id !== id));
   };
 
-  // ----------------------------------------
-  // Edit option
-  // ----------------------------------------
+  // Edit an option
   const handleEdit = (id, newValues) => {
     setOptions(
       options.map((opt) =>
@@ -81,6 +71,7 @@ const OptionTracker = () => {
               ...opt,
               strike: newValues.strike,
               breakeven: newValues.breakeven,
+              contracts: newValues.contracts,
               exp: newValues.exp,
               premium: newValues.premium,
             }
@@ -89,9 +80,7 @@ const OptionTracker = () => {
     );
   };
 
-  // ----------------------------------------
-  // Refresh live prices for all tickers
-  // ----------------------------------------
+  // Refresh price data
   const handleRefresh = async () => {
     if (options.length === 0) return;
 
@@ -101,9 +90,7 @@ const OptionTracker = () => {
       const updatedOptions = await Promise.all(
         options.map(async (opt) => {
           try {
-            const res = await axios.get(
-              `${API_BASE_URL}/api/price/${opt.ticker}`
-            );
+            const res = await axios.get(`${API_BASE_URL}/api/price/${opt.ticker}`);
             return {
               ...opt,
               livePrice: res.data.close,
@@ -132,15 +119,10 @@ const OptionTracker = () => {
         fontFamily: "Inter, sans-serif",
       }}
     >
-      {/* MARKET BAR */}
-      <MarketBar />
-
-      {/* GLOBAL NEWS TICKER */}
+      {/* NEWS */}
       <NewsTicker />
 
-      {/* -----------------------------------------
-          HEADER SECTION (with Stock Analyzer button)
-      ------------------------------------------ */}
+      {/* HEADER */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -164,7 +146,7 @@ const OptionTracker = () => {
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <img
             src="/icon-512.png"
-            alt="Cash Flow Strategist Icon"
+            alt="Option Tracker Icon"
             style={{
               width: "42px",
               height: "42px",
@@ -182,7 +164,7 @@ const OptionTracker = () => {
                 fontWeight: "600",
               }}
             >
-              💼 Cash Flow Strategist
+              💼 Option Tracker
             </h2>
             <p style={{ margin: 0, color: "#8f8f8f", fontSize: "0.8rem" }}>
               Weekly Options • Steady Income
@@ -190,7 +172,6 @@ const OptionTracker = () => {
           </div>
         </div>
 
-        {/* Navigate to Stock Analyzer */}
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -207,13 +188,11 @@ const OptionTracker = () => {
             cursor: "pointer",
           }}
         >
-          📊 Stock Analyzer
+          📊 Analyzer
         </button>
       </motion.div>
 
-      {/* -----------------------------------------
-          ADD OPTION FORM
-      ------------------------------------------ */}
+      {/* ADD OPTION FORM */}
       <form
         onSubmit={handleAddOption}
         style={{
@@ -242,24 +221,36 @@ const OptionTracker = () => {
             placeholder="Ticker (AAPL)"
             style={inputStyle}
           />
+
           <input
             value={strike}
             onChange={(e) => setStrike(e.target.value)}
             placeholder="Strike"
             style={inputStyle}
           />
+
           <input
             value={breakeven}
             onChange={(e) => setBreakeven(e.target.value)}
             placeholder="Breakeven"
             style={inputStyle}
           />
+
+          {/* NEW CONTRACTS FIELD */}
+          <input
+            value={contracts}
+            onChange={(e) => setContracts(e.target.value)}
+            placeholder="Contracts Sold"
+            style={inputStyle}
+          />
+
           <input
             value={exp}
             onChange={(e) => setExp(e.target.value)}
             placeholder="Expiration (YYYY-MM-DD)"
             style={inputStyle}
           />
+
           <input
             value={premium}
             onChange={(e) => setPremium(e.target.value)}
@@ -286,9 +277,7 @@ const OptionTracker = () => {
         </div>
       </form>
 
-      {/* -----------------------------------------
-          OPTIONS LIST
-      ------------------------------------------ */}
+      {/* OPTION CARDS */}
       {loading && (
         <p style={{ color: "#00D27A", textAlign: "center" }}>
           Refreshing prices…
@@ -301,7 +290,7 @@ const OptionTracker = () => {
             key={opt.id}
             option={opt}
             onDelete={() => handleDelete(opt.id)}
-            onEdit={(newVals) => handleEdit(opt.id, newVals)}
+            onEdit={(vals) => handleEdit(opt.id, vals)}
           />
         ))}
       </AnimatePresence>
@@ -309,9 +298,9 @@ const OptionTracker = () => {
   );
 };
 
-// -----------------------------------------
-// STYLES
-// -----------------------------------------
+// -------------------------------------
+// Input Styling
+// -------------------------------------
 const inputStyle = {
   padding: "10px",
   borderRadius: "10px",

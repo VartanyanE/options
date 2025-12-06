@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import API_BASE_URL from "../config"; 
+import API_BASE_URL from "../config";
 
 const OptionCard = ({ option, onDelete, onEdit }) => {
   const {
     ticker,
     strike,
     breakeven,
+    contracts,   // NEW FIELD
     exp,
     premium,
     livePrice,
@@ -14,49 +15,16 @@ const OptionCard = ({ option, onDelete, onEdit }) => {
   } = option;
 
   const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState({ strike, breakeven, exp, premium });
 
-  const [aiInsight, setAiInsight] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
-  const [loading, setLoading] = useState(false);
+  // --- Edit form now includes contracts ---
+  const [editForm, setEditForm] = useState({
+    strike,
+    breakeven,
+    contracts,   // NEW
+    exp,
+    premium,
+  });
 
-  // --- Fetch AI Insight from backend route ---
- const fetchAIInsight = async () => {
-  try {
-    setLoading(true);
-    setAiInsight("");
-    const res = await fetch(`${API_BASE_URL}/api/analyze/${ticker}`); // ✅ dynamic base URL
-    const data = await res.json();
-    const text = data.insight || "No insight available.";
-    setLoading(false);
-    typeText(text);
-  } catch (err) {
-    console.error("AI Insight error:", err);
-    setLoading(false);
-    setAiInsight("⚠️ Unable to fetch AI insight right now.");
-  }
-};
-
-  // --- Typing animation effect ---
- const typeText = (text) => {
-  setIsTyping(true);
-  setAiInsight(""); // clear text first
-
-  // Use local mutable copy to avoid stale closure from React
-  let currentText = "";
-  let index = 0;
-
-  const interval = setInterval(() => {
-    currentText += text[index]; // append next character
-    setAiInsight(currentText);  // ✅ always set full string (not prev + new char)
-    index += 1;
-
-    if (index >= text.length) {
-      clearInterval(interval);
-      setIsTyping(false);
-    }
-  }, 25);
-};
   // --- ITM / OTM Logic ---
   let status = "";
   let statusColor = "#999";
@@ -78,7 +46,7 @@ const OptionCard = ({ option, onDelete, onEdit }) => {
   };
 
   const arrow =
-    percentChange === null || percentChange === undefined
+    percentChange == null
       ? ""
       : percentChange > 0
       ? "📈"
@@ -148,7 +116,7 @@ const OptionCard = ({ option, onDelete, onEdit }) => {
         }}
       >
         <span>{ticker}</span>
-        {percentChange !== null && percentChange !== undefined && (
+        {percentChange != null && (
           <span style={{ color: changeColor, fontSize: "0.9rem" }}>
             {arrow} {percentChange > 0 ? "+" : ""}
             {parseFloat(percentChange).toFixed(2)}%
@@ -157,11 +125,12 @@ const OptionCard = ({ option, onDelete, onEdit }) => {
       </h2>
 
       {isEditing ? (
-        // === Edit Mode ===
+        // ======================================================
+        // ===            EDIT MODE (with Contracts)           ===
+        // ======================================================
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.3 }}
           style={{
             display: "flex",
             flexDirection: "column",
@@ -184,6 +153,16 @@ const OptionCard = ({ option, onDelete, onEdit }) => {
             value={editForm.breakeven}
             onChange={(e) =>
               setEditForm({ ...editForm, breakeven: e.target.value })
+            }
+          />
+
+          {/* NEW FIELD */}
+          <label style={labelStyle}>Contracts Sold</label>
+          <input
+            style={inputStyle}
+            value={editForm.contracts}
+            onChange={(e) =>
+              setEditForm({ ...editForm, contracts: e.target.value })
             }
           />
 
@@ -218,6 +197,7 @@ const OptionCard = ({ option, onDelete, onEdit }) => {
             >
               Save ✅
             </motion.button>
+
             <motion.button
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
@@ -229,10 +209,18 @@ const OptionCard = ({ option, onDelete, onEdit }) => {
           </div>
         </motion.div>
       ) : (
+        // ======================================================
+        // ===            VIEW MODE (with Contracts)           ===
+        // ======================================================
         <>
           <p style={{ fontSize: "0.9rem", color: "#aaa" }}>Exp: {exp}</p>
 
-          {/* --- Metrics Row --- */}
+          {/* NEW: Contracts Sold */}
+          <p style={{ fontSize: "0.9rem", marginTop: "4px" }}>
+            Contracts: <span style={{ color: "#FFC857" }}>{contracts}</span>
+          </p>
+
+          {/* Metrics Grid */}
           <div
             style={{
               display: "grid",
@@ -260,7 +248,8 @@ const OptionCard = ({ option, onDelete, onEdit }) => {
               <p
                 style={{
                   ...infoValue,
-                  color: livePrice >= breakeven ? "#00FF88" : "#FF4D4D",
+                  color:
+                    livePrice >= breakeven ? "#00FF88" : "#FF4D4D",
                 }}
               >
                 ${livePrice || "—"}
@@ -268,7 +257,7 @@ const OptionCard = ({ option, onDelete, onEdit }) => {
             </div>
           </div>
 
-          {/* === ITM/OTM Badge === */}
+          {/* ITM/OTM Badge */}
           <div style={{ marginTop: "10px", textAlign: "center" }}>
             <span
               style={{
@@ -281,46 +270,6 @@ const OptionCard = ({ option, onDelete, onEdit }) => {
             >
               {status || "—"}
             </span>
-          </div>
-
-          {/* === AI Insight Button + Scrolling Text === */}
-          <div
-            style={{
-              marginTop: "14px",
-              borderTop: "1px solid #2e2e2e",
-              paddingTop: "10px",
-              minHeight: "70px",
-            }}
-          >
-            <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={fetchAIInsight}
-              style={{
-                background: "linear-gradient(90deg, #00D27A, #00A85F)",
-                border: "none",
-                color: "#000",
-                borderRadius: "8px",
-                padding: "6px 10px",
-                fontSize: "0.85rem",
-                fontWeight: "600",
-                cursor: "pointer",
-                marginBottom: "10px",
-              }}
-            >
-              {loading ? "Thinking..." : "AI Insight ⚡"}
-            </motion.button>
-
-            <p
-              style={{
-                color: "#aaa",
-                fontSize: "0.9rem",
-                lineHeight: "1.4em",
-                whiteSpace: "pre-wrap",
-              }}
-            >
-              {aiInsight}
-            </p>
           </div>
         </>
       )}
