@@ -1,7 +1,8 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import OptionTracker from "./components/OptionTracker";
-import StockAnalyzer from "./components/StockAnalyzer"; // NEW
+import StockAnalyzer from "./components/StockAnalyzer";
+import WealthTracker from "./components/WealthTracker";
 import "./index.css";
 
 function App() {
@@ -11,6 +12,7 @@ function App() {
         <Routes>
           <Route path="/" element={<OptionTracker />} />
           <Route path="/analyzer" element={<StockAnalyzer />} />
+          <Route path="/wealth" element={<WealthTracker />} />
         </Routes>
       </div>
     </Router>
