@@ -10,12 +10,9 @@ const StockAnalyzer = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const formatNumber = (num) => {
-    const n = Number(num);
-    if (!n || Number.isNaN(n)) return "—";
-    if (n >= 1e12) return (n / 1e12).toFixed(2) + "T";
-    if (n >= 1e9) return (n / 1e9).toFixed(2) + "B";
-    if (n >= 1e6) return (n / 1e6).toFixed(2) + "M";
+  const safeNumber = (val) => {
+    const n = Number(val);
+    if (Number.isNaN(n) || n === 0) return "—";
     return n.toLocaleString();
   };
 
@@ -27,17 +24,35 @@ const StockAnalyzer = () => {
 
   const analyze = async () => {
     if (!ticker) return;
+
     setLoading(true);
     setError("");
     setResult(null);
 
     try {
+      // ✅ FIXED ROUTE
       const res = await fetch(
-        `${API_BASE_URL}/api/invest/${ticker.toUpperCase()}`
+        `${API_BASE_URL}/api/price/${ticker.toUpperCase()}`
       );
+
       if (!res.ok) throw new Error("Bad response from server");
+
       const data = await res.json();
-      setResult(data);
+
+      setResult({
+        ticker: data.ticker,
+        price: data.close,
+        percentChange: data.percentChange,
+        open: data.open,
+        high: data.high,
+        low: data.low,
+        previousClose: data.previousClose,
+
+        // These may be missing depending on data source
+        marketCap: data.marketCap ?? null,
+        pe: data.trailingPE ?? null,
+        dividendYield: data.dividendYield ?? null,
+      });
     } catch (err) {
       console.error("Analyze error:", err);
       setError("Unable to analyze this ticker. Please try again.");
@@ -45,16 +60,6 @@ const StockAnalyzer = () => {
       setLoading(false);
     }
   };
-
-  const quote = result?.quote || {};
-  const fundamentals = result?.fundamentals || {};
-  const analysis = result?.analysis || {};
-
-  // compute dividend yield percent safely
-  const dividendYieldPct =
-    typeof fundamentals.dividendYield === "number"
-      ? (fundamentals.dividendYield * 100).toFixed(2) + "%"
-      : "—";
 
   return (
     <div
@@ -65,7 +70,7 @@ const StockAnalyzer = () => {
         fontFamily: "Inter, sans-serif",
       }}
     >
-      {/* Back to Option Tracker */}
+      {/* Back */}
       <motion.button
         whileHover={{ scale: 1.03 }}
         whileTap={{ scale: 0.97 }}
@@ -84,7 +89,7 @@ const StockAnalyzer = () => {
         ← Back to Options
       </motion.button>
 
-      {/* Header card */}
+      {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -97,87 +102,44 @@ const StockAnalyzer = () => {
           marginBottom: "20px",
         }}
       >
-        <h2
-          style={{
-            margin: 0,
-            color: "#EAEAEA",
-            fontSize: "1.1rem",
-            fontWeight: "600",
-          }}
-        >
+        <h2 style={{ margin: 0, color: "#EAEAEA", fontSize: "1.1rem" }}>
           📊 Stock Analyzer
         </h2>
-        <p
-          style={{
-            marginTop: "6px",
-            color: "#999",
-            fontSize: "0.85rem",
-          }}
-        >
-          Enter a stock ticker to get a quick AI-powered summary of trend,
-          fundamentals, and key risks. Not financial advice.
+
+        <p style={{ marginTop: "6px", color: "#999", fontSize: "0.85rem" }}>
+          Quick snapshot of price and fundamentals. Not financial advice.
         </p>
 
-        <div
-          style={{
-            display: "flex",
-            gap: "8px",
-            marginTop: "12px",
-          }}
-        >
+        <div style={{ display: "flex", gap: "8px", marginTop: "12px" }}>
           <input
             value={ticker}
             onChange={(e) => setTicker(e.target.value.toUpperCase())}
             placeholder="AAPL"
-            style={{
-              flex: 1,
-              padding: "10px",
-              borderRadius: "10px",
-              border: "1px solid #2e2e2e",
-              backgroundColor: "#1a1a1a",
-              color: "#EAEAEA",
-              fontSize: "0.95rem",
-              outline: "none",
-            }}
+            style={inputStyle}
           />
+
           <motion.button
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             onClick={analyze}
-            style={{
-              padding: "10px 14px",
-              background: "linear-gradient(90deg, #00D27A, #00A85F)",
-              color: "#000",
-              fontWeight: "600",
-              border: "none",
-              borderRadius: "10px",
-              cursor: "pointer",
-              fontSize: "0.9rem",
-            }}
+            style={analyzeBtn}
           >
             {loading ? "Analyzing…" : "Analyze"}
           </motion.button>
         </div>
 
         {error && (
-          <p
-            style={{
-              marginTop: "8px",
-              color: "#FF4D4D",
-              fontSize: "0.8rem",
-            }}
-          >
+          <p style={{ marginTop: "8px", color: "#FF4D4D", fontSize: "0.8rem" }}>
             {error}
           </p>
         )}
       </motion.div>
 
-      {/* Result card */}
+      {/* Results */}
       {result && !loading && !error && (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
           style={{
             background: "linear-gradient(145deg, #141414, #1c1c1c)",
             padding: "20px",
@@ -186,105 +148,76 @@ const StockAnalyzer = () => {
             color: "#EAEAEA",
           }}
         >
-          <h2
-            style={{
-              color: "#00D27A",
-              marginBottom: "10px",
-              fontSize: "1.2rem",
-            }}
-          >
-            {quote.ticker}{" "}
-            {fundamentals.longName && `• ${fundamentals.longName}`}
+          <h2 style={{ color: "#00D27A", marginBottom: "10px" }}>
+            {result.ticker}
           </h2>
 
-          {/* Quote block */}
-          <div style={{ marginTop: "10px" }}>
-            <p>
-              Price:{" "}
-              <span style={{ color: "#F5C542" }}>
-                {quote.close != null ? `$${quote.close}` : "—"}
-              </span>
-            </p>
-            <p>
-              Change:{" "}
-              <span style={{ color: "#F5C542" }}>
-                {quote.percentChange != null
-                  ? safePercent(quote.percentChange)
-                  : "—"}
-              </span>
-            </p>
-          </div>
+          <p>
+            Price: <span style={valueStyle}>${result.price}</span>
+          </p>
+          <p>
+            Change:{" "}
+            <span style={valueStyle}>{safePercent(result.percentChange)}</span>
+          </p>
 
-          {/* Fundamentals */}
-          <h3 style={{ color: "#EAEAEA", marginTop: "20px" }}>
-            Fundamentals
-          </h3>
+          <h3 style={{ marginTop: "20px" }}>Fundamentals</h3>
 
           <p>
             Market Cap:{" "}
-            <span style={{ color: "#F5C542" }}>
-              {formatNumber(fundamentals.marketCap)}
+            <span style={valueStyle}>
+              {result.marketCap ? safeNumber(result.marketCap) : "—"}
             </span>
           </p>
 
           <p>
             P/E Ratio:{" "}
-            <span style={{ color: "#F5C542" }}>
-              {fundamentals.trailingPE != null
-                ? fundamentals.trailingPE
-                : "—"}
+            <span style={valueStyle}>
+              {result.pe != null ? result.pe : "—"}
             </span>
           </p>
 
           <p>
             Dividend Yield:{" "}
-            <span style={{ color: "#F5C542" }}>{dividendYieldPct}</span>
-          </p>
-
-          {/* AI Analysis */}
-          <h3 style={{ color: "#EAEAEA", marginTop: "20px" }}>AI Analysis</h3>
-
-          <p>
-            <strong style={{ color: "#EAEAEA" }}>Trend:</strong>{" "}
-            <span style={{ color: "#F5C542" }}>
-              {analysis.trend || "—"}
-            </span>
-          </p>
-
-          <p>
-            <strong style={{ color: "#EAEAEA" }}>Fundamentals:</strong>{" "}
-            <span style={{ color: "#F5C542" }}>
-              {analysis.fundamentalsView || "—"}
-            </span>
-          </p>
-
-          <p>
-            <strong style={{ color: "#EAEAEA" }}>Risks:</strong>{" "}
-            <span style={{ color: "#F5C542" }}>
-              {analysis.risks || "—"}
-            </span>
-          </p>
-
-          <p style={{ marginTop: "10px" }}>
-            <strong style={{ color: "#EAEAEA" }}>Score:</strong>{" "}
-            <span
-              style={{
-                color:
-                  Number(analysis.score) >= 7
-                    ? "#00FF88"
-                    : Number(analysis.score) >= 4
-                    ? "#FFD95C"
-                    : "#FF4D4D",
-                fontWeight: "700",
-              }}
-            >
-              {analysis.score != null ? analysis.score : "—"}
+            <span style={valueStyle}>
+              {result.dividendYield != null
+                ? safePercent(result.dividendYield * 100)
+                : "—"}
             </span>
           </p>
         </motion.div>
       )}
     </div>
   );
+};
+
+/* ===== Styles ===== */
+
+const inputStyle = {
+  flex: 1,
+  padding: "10px",
+  borderRadius: "10px",
+  border: "1px solid #2e2e2e",
+  backgroundColor: "#1a1a1a",
+  color: "#EAEAEA",
+  fontSize: "0.95rem",
+  outline: "none",
+  boxSizing: "border-box",
+};
+
+const analyzeBtn = {
+  padding: "10px 14px",
+  background: "linear-gradient(90deg, #00D27A, #00A85F)",
+  color: "#000",
+  fontWeight: "600",
+  border: "none",
+  borderRadius: "10px",
+  cursor: "pointer",
+  fontSize: "0.9rem",
+};
+
+const valueStyle = {
+  color: "#F5C542",
+  fontWeight: "600",
 };
 
 export default StockAnalyzer;

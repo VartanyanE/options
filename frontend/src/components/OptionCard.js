@@ -289,15 +289,13 @@ const iconBtnStyle = (color) => ({
 const labelStyle = { fontSize: "0.8rem", color: "#aaa" };
 
 const inputStyle = {
-  padding: "10px",
-  backgroundColor: "#1a1a1a",
+  padding: "8px 10px",
+  borderRadius: "8px",
   border: "1px solid #2e2e2e",
-  borderRadius: "10px",
+  backgroundColor: "#1a1a1a",
   color: "#EAEAEA",
   fontSize: "0.9rem",
-  width: "100%",
-  maxWidth: "100%",
-  boxSizing: "border-box",
+  outline: "none",
 };
 
 const saveBtnStyle = (bg) => ({
