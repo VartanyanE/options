@@ -32,8 +32,7 @@ const WealthTracker = () => {
       if (parsed.savings != null) setSavings(String(parsed.savings));
       if (parsed.realEstateEquity != null)
         setRealEstateEquity(String(parsed.realEstateEquity));
-      if (parsed.cashOnHand != null)
-        setCashOnHand(String(parsed.cashOnHand));
+      if (parsed.cashOnHand != null) setCashOnHand(String(parsed.cashOnHand));
     } catch (err) {
       console.error("LocalStorage load error:", err);
     }
@@ -50,7 +49,14 @@ const WealthTracker = () => {
       cashOnHand,
     };
     localStorage.setItem("wealthTracker", JSON.stringify(payload));
-  }, [cryptoAssets, stockAssets, checking, savings, realEstateEquity, cashOnHand]);
+  }, [
+    cryptoAssets,
+    stockAssets,
+    checking,
+    savings,
+    realEstateEquity,
+    cashOnHand,
+  ]);
 
   // === HELPERS ===
   const toNumber = (val) => {
@@ -70,7 +76,10 @@ const WealthTracker = () => {
 
   // === ASSET HANDLERS ===
   const addCrypto = () =>
-    setCryptoAssets((prev) => [...prev, { id: Date.now(), symbol: "", amount: "" }]);
+    setCryptoAssets((prev) => [
+      ...prev,
+      { id: Date.now(), symbol: "", amount: "" },
+    ]);
 
   const updateCrypto = (id, field, value) =>
     setCryptoAssets((prev) =>
@@ -81,7 +90,10 @@ const WealthTracker = () => {
     setCryptoAssets((prev) => prev.filter((c) => c.id !== id));
 
   const addStock = () =>
-    setStockAssets((prev) => [...prev, { id: Date.now(), ticker: "", shares: "" }]);
+    setStockAssets((prev) => [
+      ...prev,
+      { id: Date.now(), ticker: "", shares: "" },
+    ]);
 
   const updateStock = (id, field, value) =>
     setStockAssets((prev) =>
@@ -177,16 +189,7 @@ const WealthTracker = () => {
   return (
     <div style={{ maxWidth: "520px", margin: "auto", padding: "18px" }}>
       {/* Back Button */}
-      <motion.button
-        whileHover={{ scale: 1.04 }}
-        whileTap={{ scale: 0.96 }}
-        onClick={() => navigate("/")}
-        style={backBtn}
-      >
-        ← Back to Options
-      </motion.button>
-
-      {/* Header */}
+      {/* Top Navigation */}{" "}
       <motion.div
         initial={{ opacity: 0, y: -6 }}
         animate={{ opacity: 1, y: 0 }}
@@ -208,9 +211,36 @@ const WealthTracker = () => {
           {loadingPrices ? "Refreshing…" : "Refresh Prices"}
         </motion.button>
       </motion.div>
+      <div
+        style={{
+          display: "flex",
+          gap: "8px",
+          marginBottom: "12px",
+          flexWrap: "wrap",
+        }}
+      >
+        <button style={navBtn} onClick={() => navigate("/")}>
+          📰 News
+        </button>
 
+        <button style={navBtn} onClick={() => navigate("/options")}>
+          📈 Options
+        </button>
+
+        {/* <button style={navBtn} onClick={() => navigate("/analyzer")}>
+          📊 Analyzer
+        </button> */}
+
+        <button style={{ ...navBtn, borderColor: "#00D27A", color: "#00D27A" }}>
+          💰 Wealth
+        </button>
+
+        <button style={navBtn} onClick={() => navigate("/dividends")}>
+          💸 Dividends
+        </button>
+      </div>
+      {/* Header */}
       {error && <p style={{ color: "#FF4D4D" }}>{error}</p>}
-
       {/* CRYPTO SECTION */}
       <Section title="Crypto Holdings">
         <AnimatePresence>
@@ -232,21 +262,22 @@ const WealthTracker = () => {
                   <input
                     placeholder="Symbol (BTC)"
                     value={c.symbol}
-                    onChange={(e) => updateCrypto(c.id, "symbol", e.target.value)}
+                    onChange={(e) =>
+                      updateCrypto(c.id, "symbol", e.target.value)
+                    }
                     style={inputStyle}
                   />
 
                   <input
                     placeholder="Amount"
                     value={c.amount}
-                    onChange={(e) => updateCrypto(c.id, "amount", e.target.value)}
+                    onChange={(e) =>
+                      updateCrypto(c.id, "amount", e.target.value)
+                    }
                     style={inputStyle}
                   />
 
-                  <button
-                    onClick={() => removeCrypto(c.id)}
-                    style={deleteBtn}
-                  >
+                  <button onClick={() => removeCrypto(c.id)} style={deleteBtn}>
                     ✖
                   </button>
                 </div>
@@ -263,9 +294,7 @@ const WealthTracker = () => {
                   {price > 0 && (
                     <div>
                       <span style={labelStyle}>Price:</span>{" "}
-                      <span style={valueStyle}>
-                        ${price.toFixed(2)}
-                      </span>
+                      <span style={valueStyle}>${price.toFixed(2)}</span>
                     </div>
                   )}
                 </div>
@@ -278,7 +307,6 @@ const WealthTracker = () => {
           + Add Crypto
         </button>
       </Section>
-
       {/* STOCK SECTION */}
       <Section title="Stock Holdings">
         <AnimatePresence>
@@ -299,21 +327,22 @@ const WealthTracker = () => {
                   <input
                     placeholder="Ticker (AAPL)"
                     value={s.ticker}
-                    onChange={(e) => updateStock(s.id, "ticker", e.target.value)}
+                    onChange={(e) =>
+                      updateStock(s.id, "ticker", e.target.value)
+                    }
                     style={inputStyle}
                   />
 
                   <input
                     placeholder="Shares"
                     value={s.shares}
-                    onChange={(e) => updateStock(s.id, "shares", e.target.value)}
+                    onChange={(e) =>
+                      updateStock(s.id, "shares", e.target.value)
+                    }
                     style={inputStyle}
                   />
 
-                  <button
-                    onClick={() => removeStock(s.id)}
-                    style={deleteBtn}
-                  >
+                  <button onClick={() => removeStock(s.id)} style={deleteBtn}>
                     ✖
                   </button>
                 </div>
@@ -329,9 +358,7 @@ const WealthTracker = () => {
                   {price > 0 && (
                     <div>
                       <span style={labelStyle}>Price:</span>{" "}
-                      <span style={valueStyle}>
-                        ${price.toFixed(2)}
-                      </span>
+                      <span style={valueStyle}>${price.toFixed(2)}</span>
                     </div>
                   )}
                 </div>
@@ -344,7 +371,6 @@ const WealthTracker = () => {
           + Add Stock
         </button>
       </Section>
-
       {/* BANK */}
       <Section title="Bank Accounts">
         <input
@@ -365,7 +391,6 @@ const WealthTracker = () => {
           Total: <span style={valueStyle}>{formatCurrency(bankTotal)}</span>
         </p>
       </Section>
-
       {/* REAL ESTATE */}
       <Section title="Real Estate Equity">
         <input
@@ -380,7 +405,6 @@ const WealthTracker = () => {
           <span style={valueStyle}>{formatCurrency(realEstateTotal)}</span>
         </p>
       </Section>
-
       {/* CASH */}
       <Section title="Cash On Hand">
         <input
@@ -391,11 +415,9 @@ const WealthTracker = () => {
         />
 
         <p style={summaryText}>
-          Cash:{" "}
-          <span style={valueStyle}>{formatCurrency(cashTotal)}</span>
+          Cash: <span style={valueStyle}>{formatCurrency(cashTotal)}</span>
         </p>
       </Section>
-
       {/* TOTAL NET WORTH */}
       <motion.div
         initial={{ opacity: 0, y: 8 }}
@@ -404,9 +426,7 @@ const WealthTracker = () => {
       >
         <h3 style={{ margin: 0, color: "#EAEAEA" }}>Total Net Worth</h3>
 
-        <div style={totalValue}>
-          {formatCurrency(netWorth)}
-        </div>
+        <div style={totalValue}>{formatCurrency(netWorth)}</div>
       </motion.div>
     </div>
   );
@@ -426,7 +446,8 @@ const backBtn = {
 };
 
 const headerCard = {
-  background: "linear-gradient(90deg, rgba(0,210,122,0.1), rgba(0,168,95,0.15))",
+  background:
+    "linear-gradient(90deg, rgba(0,210,122,0.1), rgba(0,168,95,0.15))",
   border: "1px solid rgba(0,210,122,0.4)",
   padding: "14px",
   borderRadius: "12px",
@@ -471,6 +492,11 @@ const inputStyle = {
   color: "#EAEAEA",
   fontSize: ".9rem",
   outline: "none",
+
+  /* 🔑 FIX */
+  width: "100%",
+  minWidth: 0,
+  boxSizing: "border-box",
 };
 
 const addBtn = {
@@ -531,7 +557,8 @@ const summaryText = {
 const netWorthBox = {
   marginTop: "18px",
   padding: "18px",
-  background: "radial-gradient(circle at top left, rgba(0,210,122,0.2), #141414)",
+  background:
+    "radial-gradient(circle at top left, rgba(0,210,122,0.2), #141414)",
   borderRadius: "14px",
   border: "1px solid #2a2a2a",
   textAlign: "center",
@@ -542,6 +569,16 @@ const totalValue = {
   fontSize: "1.5rem",
   fontWeight: "700",
   color: "#F5C542",
+};
+const navBtn = {
+  padding: "6px 10px",
+  background: "transparent",
+  borderRadius: "10px",
+  border: "1px solid rgba(0,210,122,0.5)",
+  color: "#B5B5B5",
+  fontSize: ".8rem",
+  fontWeight: "600",
+  cursor: "pointer",
 };
 
 export default WealthTracker;

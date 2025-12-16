@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import OptionCard from "./OptionCard";
-import StockPrice from "./StockPrice";
-import NewsTicker from "./NewsTicker";
-import MarketBar from "./MarketBar";
 import API_BASE_URL from "../config";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -17,32 +14,23 @@ const OptionTracker = () => {
   const [breakeven, setBreakeven] = useState("");
   const [exp, setExp] = useState("");
   const [premium, setPremium] = useState("");
-  const [contracts, setContracts] = useState(""); // ⭐ ADDED FIELD
+  const [contracts, setContracts] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ----------------------------------------
-  // Load saved options from localStorage
-  // ----------------------------------------
+  /* ---------- Load / Save ---------- */
   useEffect(() => {
     const saved = localStorage.getItem("options");
-    if (saved) {
-      setOptions(JSON.parse(saved));
-    }
+    if (saved) setOptions(JSON.parse(saved));
   }, []);
 
-  // ----------------------------------------
-  // Save options to localStorage
-  // ----------------------------------------
   useEffect(() => {
     localStorage.setItem("options", JSON.stringify(options));
   }, [options]);
 
-  // ----------------------------------------
-  // Add new option card
-  // ----------------------------------------
+  /* ---------- Actions ---------- */
   const handleAddOption = (e) => {
     e.preventDefault();
-    if (!ticker || !strike || !breakeven || !exp || !contracts) return; // include contracts
+    if (!ticker || !strike || !breakeven || !exp || !contracts) return;
 
     const newOption = {
       id: Date.now(),
@@ -51,32 +39,25 @@ const OptionTracker = () => {
       breakeven,
       exp,
       premium: premium || "",
-      contracts, // ⭐ ADDED TO SAVED DATA
+      contracts,
       livePrice: null,
       percentChange: null,
     };
 
     setOptions([newOption, ...options]);
 
-    // reset
     setTicker("");
     setStrike("");
     setBreakeven("");
     setExp("");
     setPremium("");
-    setContracts(""); // reset contracts
+    setContracts("");
   };
 
-  // ----------------------------------------
-  // Delete option
-  // ----------------------------------------
   const handleDelete = (id) => {
     setOptions(options.filter((opt) => opt.id !== id));
   };
 
-  // ----------------------------------------
-  // Edit option
-  // ----------------------------------------
   const handleEdit = (id, newValues) => {
     setOptions(
       options.map((opt) =>
@@ -87,247 +68,116 @@ const OptionTracker = () => {
               breakeven: newValues.breakeven,
               exp: newValues.exp,
               premium: newValues.premium,
-              contracts: newValues.contracts ?? opt.contracts, // ⭐ ensure editable
+              contracts: newValues.contracts ?? opt.contracts,
             }
           : opt
       )
     );
   };
 
-  // ----------------------------------------
-  // Refresh live prices for all tickers
-  // ----------------------------------------
   const handleRefresh = async () => {
     if (options.length === 0) return;
-
     setLoading(true);
 
-    try {
-      const updatedOptions = await Promise.all(
-        options.map(async (opt) => {
-          try {
-            const res = await axios.get(
-              `${API_BASE_URL}/api/price/${opt.ticker}`
-            );
-            return {
-              ...opt,
-              livePrice: res.data.close,
-              percentChange: res.data.percentChange,
-            };
-          } catch {
-            return { ...opt };
-          }
-        })
-      );
+    const updated = await Promise.all(
+      options.map(async (opt) => {
+        try {
+          const res = await axios.get(
+            `${API_BASE_URL}/api/price/${opt.ticker}`
+          );
+          return {
+            ...opt,
+            livePrice: res.data.close,
+            percentChange: res.data.percentChange,
+          };
+        } catch {
+          return opt;
+        }
+      })
+    );
 
-      setOptions(updatedOptions);
-    } catch (err) {
-      console.error("Refresh error:", err);
-    }
-
+    setOptions(updated);
     setLoading(false);
   };
 
   return (
-    <div
-      style={{
-        maxWidth: "480px",
-        margin: "auto",
-        padding: "18px",
-        fontFamily: "Inter, sans-serif",
-      }}
-    >
-      {/* GLOBAL NEWS TICKER */}
-      <NewsTicker />
-
-      {/* -----------------------------------------
-          HEADER SECTION (with Stock Analyzer + Wealth Tracker buttons)
-      ------------------------------------------ */}
+    <div style={page}>
+      {/* ===== TOP NAV ===== */}{" "}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
         whileTap={{ scale: 0.97 }}
         onClick={handleRefresh}
-        style={{
-          background:
-            "linear-gradient(90deg, rgba(0,210,122,0.1), rgba(0,168,95,0.15))",
-          border: "1px solid rgba(0,210,122,0.4)",
-          borderRadius: "14px",
-          padding: "16px",
-          marginBottom: "22px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          boxShadow: "0 0 18px rgba(0,255,136,0.08)",
-          cursor: "pointer",
-        }}
+        style={headerCard}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <img
-            src="/icon-512.png"
-            alt="Cash Flow Strategist Icon"
-            style={{
-              width: "42px",
-              height: "42px",
-              borderRadius: "10px",
-              objectFit: "cover",
-              boxShadow: "0 0 10px rgba(0,255,136,0.4)",
-            }}
-          />
+          <img src="/icon-512.png" alt="Option Tracker Icon" style={icon} />
           <div>
-            <h2
-              style={{
-                margin: 0,
-                color: "#EAEAEA",
-                fontSize: "1.1rem",
-                fontWeight: "600",
-              }}
-            >
-              💼 Option Tracker
-            </h2>
-            <p style={{ margin: 0, color: "#8f8f8f", fontSize: "0.8rem" }}>
-              Weekly Options • Steady Income
-            </p>
+            <h2 style={title}>Option Tracker</h2>
+            <p style={subtitle}>Weekly Options • Steady Income</p>
           </div>
         </div>
-
-        {/* BUTTONS RIGHT SIDE */}
-        <div style={{ display: "flex", gap: "10px" }}>
-          {/* Stock Analyzer */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate("/analyzer");
-            }}
-            style={{
-              padding: "8px 10px",
-              background: "transparent",
-              borderRadius: "10px",
-              border: "1px solid rgba(0,210,122,0.5)",
-              color: "#00D27A",
-              fontSize: "0.8rem",
-              fontWeight: "600",
-              cursor: "pointer",
-            }}
-          >
-            📊 Analyzer
-          </button>
-
-          {/* ⭐ NEW: Wealth Tracker Button ⭐ */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate("/wealth");
-            }}
-            style={{
-              padding: "8px 10px",
-              background: "transparent",
-              borderRadius: "10px",
-              border: "1px solid rgba(0,210,122,0.5)",
-              color: "#00D27A",
-              fontSize: "0.8rem",
-              fontWeight: "600",
-              cursor: "pointer",
-            }}
-          >
-            💰 Wealth
-          </button>
-        </div>
       </motion.div>
+      <motion.div style={navBar}>
+        <NavButton label="📰 News" onClick={() => navigate("/")} />
+        <NavButton label="📈 Options" active />
+        {/* <NavButton label="📊 Analyzer" onClick={() => navigate("/analyzer")} /> */}
+        <NavButton label="💰 Wealth" onClick={() => navigate("/wealth")} />
+        <NavButton
+          label="💸 Dividends"
+          onClick={() => navigate("/dividends")}
+        />
+      </motion.div>
+      {/* ===== HEADER ===== */}
+      {/* ===== ADD OPTION ===== */}
+      <form onSubmit={handleAddOption} style={card}>
+        <h3 style={sectionTitle}>➕ Add Option</h3>
 
-      {/* -----------------------------------------
-          ADD OPTION FORM
-      ------------------------------------------ */}
-      <form
-        onSubmit={handleAddOption}
-        style={{
-          background: "#111",
-          border: "1px solid #1f1f1f",
-          borderRadius: "14px",
-          padding: "16px",
-          marginBottom: "20px",
-        }}
-      >
-        <h3
-          style={{
-            marginTop: 0,
-            marginBottom: "12px",
-            color: "#EAEAEA",
-            fontSize: "1rem",
-          }}
-        >
-          ➕ Add Option
-        </h3>
+        <input
+          value={ticker}
+          onChange={(e) => setTicker(e.target.value.toUpperCase())}
+          placeholder="Ticker"
+          style={input}
+        />
+        <input
+          value={strike}
+          onChange={(e) => setStrike(e.target.value)}
+          placeholder="Strike"
+          style={input}
+        />
+        <input
+          value={breakeven}
+          onChange={(e) => setBreakeven(e.target.value)}
+          placeholder="Breakeven"
+          style={input}
+        />
+        <input
+          value={exp}
+          onChange={(e) => setExp(e.target.value)}
+          placeholder="Expiration"
+          style={input}
+        />
+        <input
+          value={premium}
+          onChange={(e) => setPremium(e.target.value)}
+          placeholder="Premium (optional)"
+          style={input}
+        />
+        <input
+          value={contracts}
+          onChange={(e) => setContracts(e.target.value)}
+          placeholder="# Contracts"
+          style={input}
+        />
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          <input
-            value={ticker}
-            onChange={(e) => setTicker(e.target.value.toUpperCase())}
-            placeholder="Ticker (AAPL)"
-            style={inputStyle}
-          />
-          <input
-            value={strike}
-            onChange={(e) => setStrike(e.target.value)}
-            placeholder="Strike"
-            style={inputStyle}
-          />
-          <input
-            value={breakeven}
-            onChange={(e) => setBreakeven(e.target.value)}
-            placeholder="Breakeven"
-            style={inputStyle}
-          />
-          <input
-            value={exp}
-            onChange={(e) => setExp(e.target.value)}
-            placeholder="Expiration (YYYY-MM-DD)"
-            style={inputStyle}
-          />
-          <input
-            value={premium}
-            onChange={(e) => setPremium(e.target.value)}
-            placeholder="Premium (optional)"
-            style={inputStyle}
-          />
-
-          {/* ⭐ NEW: CONTRACTS SOLD INPUT ⭐ */}
-          <input
-            value={contracts}
-            onChange={(e) => setContracts(e.target.value)}
-            placeholder="# Contracts"
-            style={inputStyle}
-          />
-
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.97 }}
-            type="submit"
-            style={{
-              padding: "10px 14px",
-              background: "linear-gradient(90deg, #00D27A, #00A85F)",
-              color: "#000",
-              fontWeight: "600",
-              borderRadius: "10px",
-              border: "none",
-              cursor: "pointer",
-            }}
-          >
-            Add Option
-          </motion.button>
-        </div>
+        <button style={primaryBtn}>Add Option</button>
       </form>
-
-      {/* -----------------------------------------
-          OPTIONS LIST
-      ------------------------------------------ */}
       {loading && (
         <p style={{ color: "#00D27A", textAlign: "center" }}>
           Refreshing prices…
         </p>
       )}
-
+      {/* ===== OPTIONS LIST ===== */}
       <AnimatePresence>
         {options.map((opt) => (
           <OptionCard
@@ -342,20 +192,100 @@ const OptionTracker = () => {
   );
 };
 
-// -----------------------------------------
-// STYLES
-// -----------------------------------------
-const inputStyle = {
+/* ===== SMALL COMPONENTS ===== */
+const NavButton = ({ label, onClick, active }) => (
+  <button
+    onClick={onClick}
+    style={{
+      ...navBtn,
+      borderColor: active ? "#00D27A" : "rgba(0,210,122,0.3)",
+      color: active ? "#00D27A" : "#B5B5B5",
+    }}
+  >
+    {label}
+  </button>
+);
+
+/* ===== STYLES ===== */
+const page = { maxWidth: "520px", margin: "auto", padding: "18px" };
+
+const navBar = {
+  display: "flex",
+  gap: "8px",
+  marginBottom: "14px",
+  flexWrap: "wrap",
+};
+
+const navBtn = {
+  padding: "8px 10px",
+  background: "transparent",
+  borderRadius: "10px",
+  border: "1px solid rgba(0,210,122,0.5)",
+  fontSize: "0.8rem",
+  fontWeight: "600",
+  cursor: "pointer",
+};
+
+const headerCard = {
+  background:
+    "linear-gradient(90deg, rgba(0,210,122,0.1), rgba(0,168,95,0.15))",
+  border: "1px solid rgba(0,210,122,0.4)",
+  borderRadius: "14px",
+  padding: "16px",
+  marginBottom: "22px",
+  boxShadow: "0 0 18px rgba(0,255,136,0.08)",
+};
+
+const icon = {
+  width: "42px",
+  height: "42px",
+  borderRadius: "10px",
+  boxShadow: "0 0 10px rgba(0,255,136,0.4)",
+};
+
+const title = {
+  margin: 0,
+  color: "#EAEAEA",
+  fontSize: "1.1rem",
+  fontWeight: "600",
+};
+
+const subtitle = {
+  margin: 0,
+  color: "#8f8f8f",
+  fontSize: "0.8rem",
+};
+
+const card = {
+  background: "#111",
+  border: "1px solid #1f1f1f",
+  borderRadius: "14px",
+  padding: "16px",
+  marginBottom: "20px",
+};
+
+const sectionTitle = { marginTop: 0, color: "#EAEAEA", fontSize: "1rem" };
+
+const input = {
   padding: "10px",
   borderRadius: "10px",
   border: "1px solid #2e2e2e",
   backgroundColor: "#1a1a1a",
   color: "#EAEAEA",
-  fontSize: "0.9rem",
-  outline: "none",
   width: "100%",
-  maxWidth: "100%",
+  marginBottom: "8px",
   boxSizing: "border-box",
+};
+
+const primaryBtn = {
+  width: "100%",
+  padding: "10px",
+  background: "linear-gradient(90deg, #00D27A, #00A85F)",
+  color: "#000",
+  border: "none",
+  borderRadius: "10px",
+  fontWeight: "600",
+  cursor: "pointer",
 };
 
 export default OptionTracker;

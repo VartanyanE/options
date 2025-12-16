@@ -71,23 +71,35 @@ const StockAnalyzer = () => {
       }}
     >
       {/* Back */}
-      <motion.button
-        whileHover={{ scale: 1.03 }}
-        whileTap={{ scale: 0.97 }}
-        onClick={() => navigate("/")}
+      {/* Top Navigation */}
+      <div
         style={{
-          background: "transparent",
-          border: "1px solid #2e2e2e",
-          color: "#EAEAEA",
-          padding: "6px 10px",
-          borderRadius: "8px",
-          cursor: "pointer",
+          display: "flex",
+          gap: "8px",
           marginBottom: "14px",
-          fontSize: "0.85rem",
+          flexWrap: "wrap",
         }}
       >
-        ← Back to Options
-      </motion.button>
+        <button style={navBtn} onClick={() => navigate("/")}>
+          📰 News
+        </button>
+
+        <button style={navBtn} onClick={() => navigate("/options")}>
+          📈 Options
+        </button>
+
+        <button style={{ ...navBtn, borderColor: "#00D27A", color: "#00D27A" }}>
+          📊 Analyzer
+        </button>
+
+        <button style={navBtn} onClick={() => navigate("/wealth")}>
+          💰 Wealth
+        </button>
+
+        <button style={navBtn} onClick={() => navigate("/dividends")}>
+          💸 Dividends
+        </button>
+      </div>
 
       {/* Header */}
       <motion.div
@@ -218,6 +230,16 @@ const analyzeBtn = {
 const valueStyle = {
   color: "#F5C542",
   fontWeight: "600",
+};
+const navBtn = {
+  padding: "6px 10px",
+  background: "transparent",
+  borderRadius: "10px",
+  border: "1px solid rgba(0,210,122,0.5)",
+  color: "#B5B5B5",
+  fontSize: "0.8rem",
+  fontWeight: "600",
+  cursor: "pointer",
 };
 
 export default StockAnalyzer;
