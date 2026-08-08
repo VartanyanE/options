@@ -81,7 +81,7 @@ const StockAnalyzer = () => {
         }}
       >
         <button style={navBtn} onClick={() => navigate("/")}>
-          📰 News
+          📊 Profit Factor
         </button>
 
         <button style={navBtn} onClick={() => navigate("/options")}>

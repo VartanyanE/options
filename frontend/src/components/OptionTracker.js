@@ -119,7 +119,7 @@ const OptionTracker = () => {
         </div>
       </motion.div>
       <motion.div style={navBar}>
-        <NavButton label="📰 News" onClick={() => navigate("/")} />
+        <NavButton label="📊 Profit Factor" onClick={() => navigate("/")} />
         <NavButton label="📈 Options" active />
         {/* <NavButton label="📊 Analyzer" onClick={() => navigate("/analyzer")} /> */}
         <NavButton label="💰 Wealth" onClick={() => navigate("/wealth")} />
