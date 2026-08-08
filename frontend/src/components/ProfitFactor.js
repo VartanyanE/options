@@ -43,12 +43,17 @@ const ProfitFactor = () => {
       const grossLoss = Math.abs(
         losses.reduce((total, trade) => total + trade.profitLoss, 0)
       );
+      const totalProfitLoss = group.trades.reduce(
+        (total, trade) => total + trade.profitLoss,
+        0
+      );
       const decidedTrades = wins.length + losses.length;
 
       return {
         ...group,
         wins: wins.length,
         losses: losses.length,
+        totalProfitLoss,
         winRate: decidedTrades ? (wins.length / decidedTrades) * 100 : 0,
         profitFactor:
           grossLoss === 0 ? (grossProfit > 0 ? Infinity : null) : grossProfit / grossLoss,
@@ -98,11 +103,6 @@ const ProfitFactor = () => {
       <div style={navBar} aria-label="Primary navigation">
         <NavButton label="📊 Profit Factor" active />
         <NavButton label="📈 Options" onClick={() => navigate("/options")} />
-        <NavButton label="💰 Wealth" onClick={() => navigate("/wealth")} />
-        <NavButton
-          label="💸 Dividends"
-          onClick={() => navigate("/dividends")}
-        />
       </div>
 
       <form onSubmit={addTrade} style={card}>
@@ -168,6 +168,17 @@ const ProfitFactor = () => {
                 }
                 accent
               />
+              <Metric
+                label="Total P/L"
+                value={formatCurrency(item.totalProfitLoss)}
+                tone={
+                  item.totalProfitLoss > 0
+                    ? "profit"
+                    : item.totalProfitLoss < 0
+                    ? "loss"
+                    : "neutral"
+                }
+              />
             </article>
           ))
         )}
@@ -187,10 +198,30 @@ const NavButton = ({ label, onClick, active }) => (
   </button>
 );
 
-const Metric = ({ label, value, accent }) => (
+const formatCurrency = (value) =>
+  Number(value).toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+const Metric = ({ label, value, accent, tone }) => (
   <p style={metricRow}>
     <span style={metricLabel}>{label}</span>
-    <span style={accent ? metricAccent : metricValue}>{value}</span>
+    <span
+      style={
+        tone === "profit"
+          ? profitValue
+          : tone === "loss"
+          ? lossValue
+          : accent
+          ? metricAccent
+          : metricValue
+      }
+    >
+      {value}
+    </span>
   </p>
 );
 
@@ -311,6 +342,8 @@ const metricRow = {
 const metricLabel = { color: "#B5B5B5" };
 const metricValue = { color: "#EAEAEA", fontWeight: "600" };
 const metricAccent = { color: "#F5C542", fontWeight: "600" };
+const profitValue = { color: "#00D27A", fontWeight: "600" };
+const lossValue = { color: "#FF6B6B", fontWeight: "600" };
 
 const emptyState = {
   ...card,
