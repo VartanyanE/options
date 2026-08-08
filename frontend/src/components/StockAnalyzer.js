@@ -92,13 +92,6 @@ const StockAnalyzer = () => {
           📊 Analyzer
         </button>
 
-        <button style={navBtn} onClick={() => navigate("/wealth")}>
-          💰 Wealth
-        </button>
-
-        <button style={navBtn} onClick={() => navigate("/dividends")}>
-          💸 Dividends
-        </button>
       </div>
 
       {/* Header */}
