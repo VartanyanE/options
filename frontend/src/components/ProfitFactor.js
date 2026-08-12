@@ -6,6 +6,7 @@ const STORAGE_KEY = "profitFactorTrades";
 const ProfitFactor = () => {
   const navigate = useNavigate();
   const [strategy, setStrategy] = useState("");
+  const [resultType, setResultType] = useState("profit");
   const [profitLoss, setProfitLoss] = useState("");
   const [trades, setTrades] = useState(() => {
     try {
@@ -65,11 +66,19 @@ const ProfitFactor = () => {
     event.preventDefault();
 
     const trimmedStrategy = strategy.trim();
-    const parsedProfitLoss = Number(profitLoss);
+    const parsedAmount = Number(profitLoss);
 
-    if (!trimmedStrategy || profitLoss === "" || !Number.isFinite(parsedProfitLoss)) {
+    if (
+      !trimmedStrategy ||
+      profitLoss === "" ||
+      !Number.isFinite(parsedAmount) ||
+      parsedAmount <= 0
+    ) {
       return;
     }
+
+    const parsedProfitLoss =
+      resultType === "loss" ? -Math.abs(parsedAmount) : Math.abs(parsedAmount);
 
     setTrades((current) => [
       ...current,
@@ -80,6 +89,7 @@ const ProfitFactor = () => {
       },
     ]);
     setStrategy("");
+    setResultType("profit");
     setProfitLoss("");
   };
 
@@ -114,16 +124,28 @@ const ProfitFactor = () => {
           placeholder="Strategy name (ATM Straddle)"
           aria-label="Strategy name"
         />
-        <input
-          style={input}
-          type="number"
-          inputMode="decimal"
-          step="0.01"
-          value={profitLoss}
-          onChange={(event) => setProfitLoss(event.target.value)}
-          placeholder="Trade profit or loss (-125.50)"
-          aria-label="Trade profit or loss"
-        />
+        <div style={resultInputRow}>
+          <select
+            style={resultTypeSelect}
+            value={resultType}
+            onChange={(event) => setResultType(event.target.value)}
+            aria-label="Trade result type"
+          >
+            <option value="profit">Profit</option>
+            <option value="loss">Loss</option>
+          </select>
+          <input
+            style={amountInput}
+            type="number"
+            inputMode="decimal"
+            min="0.01"
+            step="0.01"
+            value={profitLoss}
+            onChange={(event) => setProfitLoss(event.target.value)}
+            placeholder="Amount (125.50)"
+            aria-label="Trade amount"
+          />
+        </div>
         <button type="submit" style={primaryButton}>
           Add Trade
         </button>
@@ -291,6 +313,24 @@ const input = {
   background: "#1a1a1a",
   color: "#EAEAEA",
   boxSizing: "border-box",
+};
+
+const resultInputRow = {
+  display: "grid",
+  gridTemplateColumns: "minmax(105px, 0.8fr) minmax(0, 1.4fr)",
+  gap: "8px",
+  marginBottom: "8px",
+};
+
+const resultTypeSelect = {
+  ...input,
+  marginBottom: 0,
+  cursor: "pointer",
+};
+
+const amountInput = {
+  ...input,
+  marginBottom: 0,
 };
 
 const primaryButton = {
